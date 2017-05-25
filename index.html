@@ -53,7 +53,7 @@
         
           <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
         
-        <a id="nav-search-btn" class="nav-icon" title="Zoeken"></a>
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
       </nav>
       <div id="search-form-wrap">
         <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
@@ -124,7 +124,7 @@
         }
         ...
 </code></pre><p>由于ctx.getContentType()并没有获取到contentType，导致丢出一个异常，而这个异常就是拼接了恶意代码的异常。</p>
-<p><img src="/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/1.jpg" alt=""></p>
+<p><img src="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/1.png"></p>
 <p>而JakartaMultiPartRequest.class类的parse方法的buildErrorMessage函数会调用这个e。</p>
 <pre><code>public void parse(HttpServletRequest request, String saveDir) throws IOException {
     try {
@@ -145,7 +145,7 @@
         String errorMessage = buildErrorMessage(e, new Object[]{});
         if (!errors.contains(errorMessage)) {
             errors.add(errorMessage);
-</code></pre><p><img src="/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/2.jpg" alt=""></p>
+</code></pre><p><img src="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/2.png"></p>
 <p>接下来的调用过程为</p>
 <p>buildErrorMessage函数把e带入findText方法。</p>
 <pre><code>protected String buildErrorMessage(Throwable e, Object[] args) {
@@ -167,7 +167,7 @@
     return translateVariables(new char[]{&apos;$&apos;, &apos;%&apos;}, expression, stack, String.class, null).toString();
 }
 </code></pre><p>然后对 $ 和 % 开头的内容进行搜索，然后都搜索出的内容带入 findValue。</p>
-<p><img src="/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/3.jpg" alt=""></p>
+<p><img src="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/3.png"></p>
 <p>接下来的内容就是绕过ognl的沙盒和拼接更好的利用输出了。</p>
 <p>##0x02 Bypass Struts2 2.3.31 ognl沙盒</p>
 <p>细心的同学肯定已经发现，此次bypass沙盒的方式显然跟以前不一样，利用中给出现了两次三元表达式，其中第一个三元表达式是进行bypass ognl沙盒的方式。其中运用了两处特性。</p>
@@ -182,7 +182,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj34278au0000gufyv6ogyb20" class="article-share-link">Delen</a>
+      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj342b8pi0000hpfy9yg7u82h" class="article-share-link">Share</a>
       
       
     </footer>
@@ -207,7 +207,7 @@
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Archieven</h3>
+    <h3 class="widget-title">Archives</h3>
     <div class="widget">
       <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li></ul>
     </div>
@@ -217,7 +217,7 @@
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Recente berichten</h3>
+    <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
         
