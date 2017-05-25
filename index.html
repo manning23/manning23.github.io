@@ -64,6 +64,314 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-WordPress-4-6版本远程代码执行漏洞" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" class="article-date">
+  <time datetime="2017-05-05T03:05:18.000Z" itemprop="datePublished">2017-05-05</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/">WordPress 4.6版本远程代码执行漏洞</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="WordPress-4-6-远程代码执行漏洞分析"><a href="#WordPress-4-6-远程代码执行漏洞分析" class="headerlink" title="WordPress 4.6 远程代码执行漏洞分析"></a>WordPress 4.6 远程代码执行漏洞分析</h1><h2 id="0x00-漏洞概述"><a href="#0x00-漏洞概述" class="headerlink" title="0x00 漏洞概述"></a>0x00 漏洞概述</h2><p>WordPress 4.6 版本远程代码执行漏洞是一个非常严重的漏洞，未经授权的攻击者利用该漏洞就能实现远程代码执行，针对目标服务器实现即时访问，最终导致目标应用服务器的完全陷落。无需插件或者非标准设置，就能利用该漏洞。Dawid Golunski (@dawid_golunski) 还在poc中为我们展示了精彩的替换 ／ 和 “ ”(表示空格)的技巧。</p>
+<h2 id="0x01-漏洞分析"><a href="#0x01-漏洞分析" class="headerlink" title="0x01 漏洞分析"></a>0x01 漏洞分析</h2><p>整个过程利用了 WordPress 未对请求的 Host 字段进行校验和 PHPMailer 在 小于 5.2.20 版本存在的代码执行漏洞。对以上两个不安全点进行利用，导致远程代码执行。</p>
+<p>POC地址为 <a href="https://exploitbox.io/vuln/WordPress-Exploit-4-6-RCE-CODE-EXEC-CVE-2016-10033.html" target="_blank" rel="external">WordPress-Exploit-4-6-RCE-CODE-EXEC-CVE-2016-10033</a></p>
+<p>我们测试的命令为</p>
+<pre><code>/usr/bin/touch /tmp/manning.test
+</code></pre><p>我们看下POC发出的请求</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p1.png" width="80%"></p>
+<p>Host 字段构造如下</p>
+<pre><code>Host: target(any -froot@localhost -be ${run{${substr{0}{1}{$spool_directory}}usr${substr{0}{1}{$spool_directory}}bin${substr{0}{1}{$spool_directory}}touch${substr{10}{1}{$tod_log}}${substr{0}{1}{$spool_directory}}tmp${substr{0}{1}{$spool_directory}}manning.test}} null)
+</code></pre><p>这点跟我们认知中的Host完全不一样。</p>
+<p>接下来的流程非常简单。</p>
+<p>在 wp-login.php 中，首先根据请求中的 action 进行路由</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p2.png" width="80%"></p>
+<p>接着进入函数 retrieve_password</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p3.png" width="80%"></p>
+<p>接着进入 wp_mail 函数，位于文件 pluggable.php</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p4.png" width="80%"></p>
+<p>在 wp_mail 中，WordPress 会把 _SERVER[‘SERVER_NAME’] 变量拼接到 from_email 变量中。</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p5.png" width="80%"></p>
+<p>经过一系列的邮件内容拼接，把类对象 phpmailer 的类变量都进行了赋值，之后进入调用了 Send 函数</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p6.png" width="80%"></p>
+<p>这里把最关键的 mailSend 函数贴出来，mailSend 函数负责最终调用，关键在 mailPassthru 函数，该函数会把带有恶意的 params 变量交给 PHPMailer。</p>
+<pre><code>protected function mailSend($header, $body)
+{
+    $toArr = array();
+    foreach ($this-&gt;to as $toaddr) {
+        $toArr[] = $this-&gt;addrFormat($toaddr);
+    }
+    $to = implode(&apos;, &apos;, $toArr);
+
+    if (empty($this-&gt;Sender)) {
+        $params = &apos; &apos;;
+    } else {
+        $params = sprintf(&apos;-f%s&apos;, $this-&gt;Sender);
+    }
+    if ($this-&gt;Sender != &apos;&apos; and !ini_get(&apos;safe_mode&apos;)) {
+        $old_from = ini_get(&apos;sendmail_from&apos;);
+        ini_set(&apos;sendmail_from&apos;, $this-&gt;Sender);
+    }
+    $result = false;
+    if ($this-&gt;SingleTo &amp;&amp; count($toArr) &gt; 1) {
+        foreach ($toArr as $toAddr) {
+            $result = $this-&gt;mailPassthru($toAddr, $this-&gt;Subject, $body, $header, $params);
+            $this-&gt;doCallback($result, array($toAddr), $this-&gt;cc, $this-&gt;bcc, $this-&gt;Subject, $body, $this-&gt;From);
+        }
+    } else {
+        $result = $this-&gt;mailPassthru($to, $this-&gt;Subject, $body, $header, $params);
+        $this-&gt;doCallback($result, $this-&gt;to, $this-&gt;cc, $this-&gt;bcc, $this-&gt;Subject, $body, $this-&gt;From);
+    }
+    if (isset($old_from)) {
+        ini_set(&apos;sendmail_from&apos;, $old_from);
+    }
+    if (!$result) {
+        throw new phpmailerException($this-&gt;lang(&apos;instantiate&apos;), self::STOP_CRITICAL);
+    }
+    return true;
+}
+</code></pre><p>动态调试，在 mailPassthru 调用时，整个变量如图所示。</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p7.png" width="80%"></p>
+<p>最终在 mailPassthru 内调用了 @mail。</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p8.png" width="80%"></p>
+<p>最终我们在 tmp 目录看到了 manning.test 文件</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p9.png" width="80%"></p>
+<h2 id="0x02-补丁分析"><a href="#0x02-补丁分析" class="headerlink" title="0x02 补丁分析"></a>0x02 补丁分析</h2><p>WordPress 4.7.1 版本</p>
+<p>1，升级phpmailer的版本到5.2.22</p>
+<p>2，在 mailSend 修改，对变量 params 进行了过滤。</p>
+<pre><code>protected function mailSend($header, $body)
+{
+    $toArr = array();
+    foreach ($this-&gt;to as $toaddr) {
+        $toArr[] = $this-&gt;addrFormat($toaddr);
+    }
+    $to = implode(&apos;, &apos;, $toArr);
+
+    $params = null;
+    //This sets the SMTP envelope sender which gets turned into a return-path header by the receiver
+    if (!empty($this-&gt;Sender) and $this-&gt;validateAddress($this-&gt;Sender)) {
+        // CVE-2016-10033, CVE-2016-10045: Don&apos;t pass -f if characters will be escaped.
+        if (self::isShellSafe($this-&gt;Sender)) {
+            $params = sprintf(&apos;-f%s&apos;, $this-&gt;Sender);
+        }
+    }
+    if (!empty($this-&gt;Sender) and !ini_get(&apos;safe_mode&apos;) and $this-&gt;validateAddress($this-&gt;Sender)) {
+        $old_from = ini_get(&apos;sendmail_from&apos;);
+        ini_set(&apos;sendmail_from&apos;, $this-&gt;Sender);
+    }
+    $result = false;
+    if ($this-&gt;SingleTo and count($toArr) &gt; 1) {
+        foreach ($toArr as $toAddr) {
+            $result = $this-&gt;mailPassthru($toAddr, $this-&gt;Subject, $body, $header, $params);
+            $this-&gt;doCallback($result, array($toAddr), $this-&gt;cc, $this-&gt;bcc, $this-&gt;Subject, $body, $this-&gt;From);
+        }
+    } else {
+        $result = $this-&gt;mailPassthru($to, $this-&gt;Subject, $body, $header, $params);
+        $this-&gt;doCallback($result, $this-&gt;to, $this-&gt;cc, $this-&gt;bcc, $this-&gt;Subject, $body, $this-&gt;From);
+    }
+    if (isset($old_from)) {
+        ini_set(&apos;sendmail_from&apos;, $old_from);
+    }
+    if (!$result) {
+        throw new phpmailerException($this-&gt;lang(&apos;instantiate&apos;), self::STOP_CRITICAL);
+    }
+    return true;
+}
+</code></pre><h2 id="0x03-防护建议"><a href="#0x03-防护建议" class="headerlink" title="0x03 防护建议"></a>0x03 防护建议</h2><p>升级 WordPress 至最新版本。</p>
+<h2 id="0x04-调试总结"><a href="#0x04-调试总结" class="headerlink" title="0x04 调试总结"></a>0x04 调试总结</h2><p>调试过程中需要注意：</p>
+<ul>
+<li>sendmail 需要装 exim4扩展</li>
+<li>需要更改poc中的账户，poc中填写的是admin</li>
+<li>poc运行环境需要有python环境</li>
+</ul>
+<p>本次调试环境是：</p>
+<ul>
+<li>Server version: Apache/2.4.18 (Ubuntu)</li>
+<li>PHP 7.0.15-0ubuntu0.16.04.4 (cli) ( NTS )</li>
+<li>sendmail 和 exim4扩展</li>
+</ul>
+<p>其他注意事项可以参考 @Tomato菜的要死 和 @廖新喜1 的微博。</p>
+<h2 id="0x05-参考文章"><a href="#0x05-参考文章" class="headerlink" title="0x05 参考文章"></a>0x05 参考文章</h2><ul>
+<li><a href="https://exploitbox.io/vuln/WordPress-Exploit-4-6-RCE-CODE-EXEC-CVE-2016-10033.html" target="_blank" rel="external">https://exploitbox.io/vuln/WordPress-Exploit-4-6-RCE-CODE-EXEC-CVE-2016-10033.html</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" data-id="cj342tooh0001pyfyaddtmacn" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-Struts2-S046命令执行漏洞" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/03/21/Struts2-S046命令执行漏洞/" class="article-date">
+  <time datetime="2017-03-21T07:01:46.000Z" itemprop="datePublished">2017-03-21</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/03/21/Struts2-S046命令执行漏洞/">Struts2 S046命令执行漏洞</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="0x00-漏洞介绍"><a href="#0x00-漏洞介绍" class="headerlink" title="0x00 漏洞介绍"></a>0x00 漏洞介绍</h2><p>S2-046漏洞和S2-045漏洞非常相似，都是由报错信息带入了buildErrorMessage这个方法造成的。 但是这次存在两个触发点。</p>
+<ul>
+<li>Content-Length 的长度值超长</li>
+<li>Content-Disposition的filename存在空字节</li>
+</ul>
+<h2 id="0x01-漏洞分析"><a href="#0x01-漏洞分析" class="headerlink" title="0x01 漏洞分析"></a>0x01 漏洞分析</h2><h3 id="Content-Length-的长度值超长"><a href="#Content-Length-的长度值超长" class="headerlink" title="Content-Length 的长度值超长"></a>Content-Length 的长度值超长</h3><p>这个漏洞需要在strust.xml中加入 <code>&lt;constant name=&quot;struts.multipart.parser&quot;  value=&quot;jakarta-stream&quot; /&gt;</code>才能触发。</p>
+<p>触发漏洞的代码在 <code>JakartaStreamMultiPartRequest类</code>中，processUpload函数处理了content-length长度超长的异常，导致问题触发。</p>
+<pre><code>private void processUpload(HttpServletRequest request, String saveDir)
+        throws Exception {
+
+    // Sanity check that the request is a multi-part/form-data request.
+    if (ServletFileUpload.isMultipartContent(request)) {
+
+        // Sanity check on request size.
+        boolean requestSizePermitted = isRequestSizePermitted(request);
+
+        // Interface with Commons FileUpload API
+        // Using the Streaming API
+        ServletFileUpload servletFileUpload = new ServletFileUpload();
+        FileItemIterator i = servletFileUpload.getItemIterator(request);
+
+        // Iterate the file items
+        while (i.hasNext()) {
+            try {
+                FileItemStream itemStream = i.next();
+
+                // If the file item stream is a form field, delegate to the
+                // field item stream handler
+                if (itemStream.isFormField()) {
+                    processFileItemStreamAsFormField(itemStream);
+                }
+
+                // Delegate the file item stream for a file field to the
+                // file item stream handler, but delegation is skipped
+                // if the requestSizePermitted check failed based on the
+                // complete content-size of the request.
+                else {
+
+                    // prevent processing file field item if request size not allowed.
+                    // also warn user in the logs.
+                    if (!requestSizePermitted) {
+                        addFileSkippedError(itemStream.getName(), request);
+                        LOG.warn(&quot;Skipped stream &apos;#0&apos;, request maximum size (#1) exceeded.&quot;, itemStream.getName(), maxSize);
+                        continue;
+                    }
+
+                    processFileItemStreamAsFileField(itemStream, saveDir);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+</code></pre><p>触发点在</p>
+<pre><code>LOG.warn(&quot;Skipped stream &apos;#0&apos;, request maximum size (#1) exceeded.&quot;, itemStream.getName(), maxSize);
+</code></pre><p>之后进入了函数addFileSkippedError，我们又见到了熟悉的buildErrorMessage，而这次带入的参数为fileName</p>
+<pre><code>private void addFileSkippedError(String fileName, HttpServletRequest request) {
+    String exceptionMessage = &quot;Skipped file &quot; + fileName + &quot;; request size limit exceeded.&quot;;
+    FileSizeLimitExceededException exception = new FileUploadBase.FileSizeLimitExceededException(exceptionMessage, getRequestSize(request), maxSize);
+    String message = buildErrorMessage(exception, new Object[]{fileName, getRequestSize(request), maxSize});
+    if (!errors.contains(message))
+        errors.add(message);
+}
+</code></pre><h3 id="Content-Disposition的filename存在空字节"><a href="#Content-Disposition的filename存在空字节" class="headerlink" title="Content-Disposition的filename存在空字节"></a>Content-Disposition的filename存在空字节</h3><p>第二种触发漏洞的方式，属于直接触发，在streams.class中，会对filename进行检查，如果检查出错，也会记录log。</p>
+<pre><code>public static String checkFileName(String fileName) {
+    if (fileName != null  &amp;&amp;  fileName.indexOf(&apos;\u0000&apos;) != -1) {
+        // pFileName.replace(&quot;\u0000&quot;, &quot;\\0&quot;)
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0;  i &lt; fileName.length();  i++) {
+            char c = fileName.charAt(i);
+            switch (c) {
+                case 0:
+                    sb.append(&quot;\\0&quot;);
+                    break;
+                default:
+                    sb.append(c);
+                    break;
+            }
+        }
+        throw new InvalidFileNameException(fileName,
+                &quot;Invalid file name: &quot; + sb);
+    }
+    return fileName;
+}
+</code></pre><p>最终进入的是JakartaStreamMultiPartRequest类的，我们又见到了buildErrorMessage</p>
+<pre><code>public void parse(HttpServletRequest request, String saveDir)
+        throws IOException {
+    try {
+        setLocale(request);
+        processUpload(request, saveDir);
+    } catch (Exception e) {
+        e.printStackTrace();
+        String errorMessage = buildErrorMessage(e, new Object[]{});
+        if (!errors.contains(errorMessage))
+            errors.add(errorMessage);
+    }
+}
+</code></pre><h2 id="0x02-规则添加注意点"><a href="#0x02-规则添加注意点" class="headerlink" title="0x02 规则添加注意点"></a>0x02 规则添加注意点</h2><p>由于存在两种方式，因此规则不是很好添加。且存在一定情况的bypass可能。</p>
+<ul>
+<li>由于strust2会对data字段逐字解析，filename后可以跟如下几种情况。<ul>
+<li>多个空格</li>
+<li>多个空格，且里面可以添加\r\n</li>
+<li>n个空格</li>
+</ul>
+</li>
+</ul>
+<!-- <img src="1.png"> -->
+<p><img src="/2017/03/21/Struts2-S046命令执行漏洞/1.png"></p>
+<ul>
+<li>\0b不可当成检测字符，\0b可以被替换成\0000,\0a - \0z 等等。</li>
+</ul>
+<!-- <img src="4.png" width=80%> -->
+<p><img src="/2017/03/21/Struts2-S046命令执行漏洞/4.png" width="80%"></p>
+<h2 id="0x03-漏洞修复"><a href="#0x03-漏洞修复" class="headerlink" title="0x03 漏洞修复"></a>0x03 漏洞修复</h2><p>升级版本到 <code>2.3.32 、 2.5.10.1</code></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/03/21/Struts2-S046命令执行漏洞/" data-id="cj342took0002pyfyn6i5hpxp" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" class="article-date">
@@ -182,7 +490,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj342b8pi0000hpfy9yg7u82h" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj342tooa0000pyfypsz8zmkj" class="article-share-link">Share</a>
       
       
     </footer>
@@ -209,7 +517,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li></ul>
     </div>
   </div>
 
@@ -220,6 +528,14 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/">WordPress 4.6版本远程代码执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/21/Struts2-S046命令执行漏洞/">Struts2 S046命令执行漏洞</a>
+          </li>
         
           <li>
             <a href="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/">Struts2 Jakarta模块Content-type命令执行漏洞(CVE-2017-5638)</a>

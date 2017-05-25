@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>WordPress 4.6版本远程代码执行漏洞 | Manning23</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="WordPress 4.6 远程代码执行漏洞分析0x00 漏洞概述WordPress 4.6 版本远程代码执行漏洞是一个非常严重的漏洞，未经授权的攻击者利用该漏洞就能实现远程代码执行，针对目标服务器实现即时访问，最终导致目标应用服务器的完全陷落。无需插件或者非标准设置，就能利用该漏洞。Dawid Golunski (@dawid_golunski) 还在poc中为我们展示了精彩的替换 ／ 和 “">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WordPress 4.6版本远程代码执行漏洞">
+<meta property="og:url" content="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/index.html">
+<meta property="og:site_name" content="Manning23">
+<meta property="og:description" content="WordPress 4.6 远程代码执行漏洞分析0x00 漏洞概述WordPress 4.6 版本远程代码执行漏洞是一个非常严重的漏洞，未经授权的攻击者利用该漏洞就能实现远程代码执行，针对目标服务器实现即时访问，最终导致目标应用服务器的完全陷落。无需插件或者非标准设置，就能利用该漏洞。Dawid Golunski (@dawid_golunski) 还在poc中为我们展示了精彩的替换 ／ 和 “">
+<meta property="og:image" content="http://yoursite.com/2017/05/05/Struts2-S046命令执行漏洞/p1.png">
+<meta property="og:image" content="http://yoursite.com/2017/05/05/Struts2-S046命令执行漏洞/p2.png">
+<meta property="og:image" content="http://yoursite.com/2017/05/05/Struts2-S046命令执行漏洞/p3.png">
+<meta property="og:image" content="http://yoursite.com/2017/05/05/Struts2-S046命令执行漏洞/p4.png">
+<meta property="og:image" content="http://yoursite.com/2017/05/05/Struts2-S046命令执行漏洞/p5.png">
+<meta property="og:image" content="http://yoursite.com/2017/05/05/Struts2-S046命令执行漏洞/p6.png">
+<meta property="og:image" content="http://yoursite.com/2017/05/05/Struts2-S046命令执行漏洞/p7.png">
+<meta property="og:image" content="http://yoursite.com/2017/05/05/Struts2-S046命令执行漏洞/p8.png">
+<meta property="og:image" content="http://yoursite.com/2017/05/05/Struts2-S046命令执行漏洞/p9.png">
+<meta property="og:updated_time" content="2017-05-25T07:07:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="WordPress 4.6版本远程代码执行漏洞">
+<meta name="twitter:description" content="WordPress 4.6 远程代码执行漏洞分析0x00 漏洞概述WordPress 4.6 版本远程代码执行漏洞是一个非常严重的漏洞，未经授权的攻击者利用该漏洞就能实现远程代码执行，针对目标服务器实现即时访问，最终导致目标应用服务器的完全陷落。无需插件或者非标准设置，就能利用该漏洞。Dawid Golunski (@dawid_golunski) 还在poc中为我们展示了精彩的替换 ／ 和 “">
+<meta name="twitter:image" content="http://yoursite.com/2017/05/05/Struts2-S046命令执行漏洞/p1.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Manning23" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Manning23</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-WordPress-4-6版本远程代码执行漏洞" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" class="article-date">
+  <time datetime="2017-05-05T03:05:18.000Z" itemprop="datePublished">2017-05-05</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      WordPress 4.6版本远程代码执行漏洞
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="WordPress-4-6-远程代码执行漏洞分析"><a href="#WordPress-4-6-远程代码执行漏洞分析" class="headerlink" title="WordPress 4.6 远程代码执行漏洞分析"></a>WordPress 4.6 远程代码执行漏洞分析</h1><h2 id="0x00-漏洞概述"><a href="#0x00-漏洞概述" class="headerlink" title="0x00 漏洞概述"></a>0x00 漏洞概述</h2><p>WordPress 4.6 版本远程代码执行漏洞是一个非常严重的漏洞，未经授权的攻击者利用该漏洞就能实现远程代码执行，针对目标服务器实现即时访问，最终导致目标应用服务器的完全陷落。无需插件或者非标准设置，就能利用该漏洞。Dawid Golunski (@dawid_golunski) 还在poc中为我们展示了精彩的替换 ／ 和 “ ”(表示空格)的技巧。</p>
+<h2 id="0x01-漏洞分析"><a href="#0x01-漏洞分析" class="headerlink" title="0x01 漏洞分析"></a>0x01 漏洞分析</h2><p>整个过程利用了 WordPress 未对请求的 Host 字段进行校验和 PHPMailer 在 小于 5.2.20 版本存在的代码执行漏洞。对以上两个不安全点进行利用，导致远程代码执行。</p>
+<p>POC地址为 <a href="https://exploitbox.io/vuln/WordPress-Exploit-4-6-RCE-CODE-EXEC-CVE-2016-10033.html" target="_blank" rel="external">WordPress-Exploit-4-6-RCE-CODE-EXEC-CVE-2016-10033</a></p>
+<p>我们测试的命令为</p>
+<pre><code>/usr/bin/touch /tmp/manning.test
+</code></pre><p>我们看下POC发出的请求</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p1.png" width="80%"></p>
+<p>Host 字段构造如下</p>
+<pre><code>Host: target(any -froot@localhost -be ${run{${substr{0}{1}{$spool_directory}}usr${substr{0}{1}{$spool_directory}}bin${substr{0}{1}{$spool_directory}}touch${substr{10}{1}{$tod_log}}${substr{0}{1}{$spool_directory}}tmp${substr{0}{1}{$spool_directory}}manning.test}} null)
+</code></pre><p>这点跟我们认知中的Host完全不一样。</p>
+<p>接下来的流程非常简单。</p>
+<p>在 wp-login.php 中，首先根据请求中的 action 进行路由</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p2.png" width="80%"></p>
+<p>接着进入函数 retrieve_password</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p3.png" width="80%"></p>
+<p>接着进入 wp_mail 函数，位于文件 pluggable.php</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p4.png" width="80%"></p>
+<p>在 wp_mail 中，WordPress 会把 _SERVER[‘SERVER_NAME’] 变量拼接到 from_email 变量中。</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p5.png" width="80%"></p>
+<p>经过一系列的邮件内容拼接，把类对象 phpmailer 的类变量都进行了赋值，之后进入调用了 Send 函数</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p6.png" width="80%"></p>
+<p>这里把最关键的 mailSend 函数贴出来，mailSend 函数负责最终调用，关键在 mailPassthru 函数，该函数会把带有恶意的 params 变量交给 PHPMailer。</p>
+<pre><code>protected function mailSend($header, $body)
+{
+    $toArr = array();
+    foreach ($this-&gt;to as $toaddr) {
+        $toArr[] = $this-&gt;addrFormat($toaddr);
+    }
+    $to = implode(&apos;, &apos;, $toArr);
+
+    if (empty($this-&gt;Sender)) {
+        $params = &apos; &apos;;
+    } else {
+        $params = sprintf(&apos;-f%s&apos;, $this-&gt;Sender);
+    }
+    if ($this-&gt;Sender != &apos;&apos; and !ini_get(&apos;safe_mode&apos;)) {
+        $old_from = ini_get(&apos;sendmail_from&apos;);
+        ini_set(&apos;sendmail_from&apos;, $this-&gt;Sender);
+    }
+    $result = false;
+    if ($this-&gt;SingleTo &amp;&amp; count($toArr) &gt; 1) {
+        foreach ($toArr as $toAddr) {
+            $result = $this-&gt;mailPassthru($toAddr, $this-&gt;Subject, $body, $header, $params);
+            $this-&gt;doCallback($result, array($toAddr), $this-&gt;cc, $this-&gt;bcc, $this-&gt;Subject, $body, $this-&gt;From);
+        }
+    } else {
+        $result = $this-&gt;mailPassthru($to, $this-&gt;Subject, $body, $header, $params);
+        $this-&gt;doCallback($result, $this-&gt;to, $this-&gt;cc, $this-&gt;bcc, $this-&gt;Subject, $body, $this-&gt;From);
+    }
+    if (isset($old_from)) {
+        ini_set(&apos;sendmail_from&apos;, $old_from);
+    }
+    if (!$result) {
+        throw new phpmailerException($this-&gt;lang(&apos;instantiate&apos;), self::STOP_CRITICAL);
+    }
+    return true;
+}
+</code></pre><p>动态调试，在 mailPassthru 调用时，整个变量如图所示。</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p7.png" width="80%"></p>
+<p>最终在 mailPassthru 内调用了 @mail。</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p8.png" width="80%"></p>
+<p>最终我们在 tmp 目录看到了 manning.test 文件</p>
+<p><img src="/2017/05/05/Struts2-S046命令执行漏洞/p9.png" width="80%"></p>
+<h2 id="0x02-补丁分析"><a href="#0x02-补丁分析" class="headerlink" title="0x02 补丁分析"></a>0x02 补丁分析</h2><p>WordPress 4.7.1 版本</p>
+<p>1，升级phpmailer的版本到5.2.22</p>
+<p>2，在 mailSend 修改，对变量 params 进行了过滤。</p>
+<pre><code>protected function mailSend($header, $body)
+{
+    $toArr = array();
+    foreach ($this-&gt;to as $toaddr) {
+        $toArr[] = $this-&gt;addrFormat($toaddr);
+    }
+    $to = implode(&apos;, &apos;, $toArr);
+
+    $params = null;
+    //This sets the SMTP envelope sender which gets turned into a return-path header by the receiver
+    if (!empty($this-&gt;Sender) and $this-&gt;validateAddress($this-&gt;Sender)) {
+        // CVE-2016-10033, CVE-2016-10045: Don&apos;t pass -f if characters will be escaped.
+        if (self::isShellSafe($this-&gt;Sender)) {
+            $params = sprintf(&apos;-f%s&apos;, $this-&gt;Sender);
+        }
+    }
+    if (!empty($this-&gt;Sender) and !ini_get(&apos;safe_mode&apos;) and $this-&gt;validateAddress($this-&gt;Sender)) {
+        $old_from = ini_get(&apos;sendmail_from&apos;);
+        ini_set(&apos;sendmail_from&apos;, $this-&gt;Sender);
+    }
+    $result = false;
+    if ($this-&gt;SingleTo and count($toArr) &gt; 1) {
+        foreach ($toArr as $toAddr) {
+            $result = $this-&gt;mailPassthru($toAddr, $this-&gt;Subject, $body, $header, $params);
+            $this-&gt;doCallback($result, array($toAddr), $this-&gt;cc, $this-&gt;bcc, $this-&gt;Subject, $body, $this-&gt;From);
+        }
+    } else {
+        $result = $this-&gt;mailPassthru($to, $this-&gt;Subject, $body, $header, $params);
+        $this-&gt;doCallback($result, $this-&gt;to, $this-&gt;cc, $this-&gt;bcc, $this-&gt;Subject, $body, $this-&gt;From);
+    }
+    if (isset($old_from)) {
+        ini_set(&apos;sendmail_from&apos;, $old_from);
+    }
+    if (!$result) {
+        throw new phpmailerException($this-&gt;lang(&apos;instantiate&apos;), self::STOP_CRITICAL);
+    }
+    return true;
+}
+</code></pre><h2 id="0x03-防护建议"><a href="#0x03-防护建议" class="headerlink" title="0x03 防护建议"></a>0x03 防护建议</h2><p>升级 WordPress 至最新版本。</p>
+<h2 id="0x04-调试总结"><a href="#0x04-调试总结" class="headerlink" title="0x04 调试总结"></a>0x04 调试总结</h2><p>调试过程中需要注意：</p>
+<ul>
+<li>sendmail 需要装 exim4扩展</li>
+<li>需要更改poc中的账户，poc中填写的是admin</li>
+<li>poc运行环境需要有python环境</li>
+</ul>
+<p>本次调试环境是：</p>
+<ul>
+<li>Server version: Apache/2.4.18 (Ubuntu)</li>
+<li>PHP 7.0.15-0ubuntu0.16.04.4 (cli) ( NTS )</li>
+<li>sendmail 和 exim4扩展</li>
+</ul>
+<p>其他注意事项可以参考 @Tomato菜的要死 和 @廖新喜1 的微博。</p>
+<h2 id="0x05-参考文章"><a href="#0x05-参考文章" class="headerlink" title="0x05 参考文章"></a>0x05 参考文章</h2><ul>
+<li><a href="https://exploitbox.io/vuln/WordPress-Exploit-4-6-RCE-CODE-EXEC-CVE-2016-10033.html" target="_blank" rel="external">https://exploitbox.io/vuln/WordPress-Exploit-4-6-RCE-CODE-EXEC-CVE-2016-10033.html</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" data-id="cj342tooh0001pyfyaddtmacn" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2017/03/21/Struts2-S046命令执行漏洞/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Struts2 S046命令执行漏洞</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/">WordPress 4.6版本远程代码执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/21/Struts2-S046命令执行漏洞/">Struts2 S046命令执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/">Struts2 Jakarta模块Content-type命令执行漏洞(CVE-2017-5638)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 Manning23<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
