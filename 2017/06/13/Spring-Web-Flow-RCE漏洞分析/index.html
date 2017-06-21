@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Spring Web Flow RCE漏洞分析 | Manning23</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="0x00 漏洞介绍在Spring Web Flow中，一定条件下，可以造成RCE。 0x01 漏洞分析5月31日，pivotal.io 爆出 Spring Web Flow 的 RCE 漏洞。从Spring官网中看出来，这个 RCE 评级较低，为 Minor。  我们先从 github 的 commit 来看  Spring 官方的修复，修改了执行表达式的函数。 ###　调用关系 我们知道，漏洞点">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring Web Flow RCE漏洞分析">
+<meta property="og:url" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/index.html">
+<meta property="og:site_name" content="Manning23">
+<meta property="og:description" content="0x00 漏洞介绍在Spring Web Flow中，一定条件下，可以造成RCE。 0x01 漏洞分析5月31日，pivotal.io 爆出 Spring Web Flow 的 RCE 漏洞。从Spring官网中看出来，这个 RCE 评级较低，为 Minor。  我们先从 github 的 commit 来看  Spring 官方的修复，修改了执行表达式的函数。 ###　调用关系 我们知道，漏洞点">
+<meta property="og:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/5.png">
+<meta property="og:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/4.png">
+<meta property="og:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/8.png">
+<meta property="og:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/9.png">
+<meta property="og:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/1.png">
+<meta property="og:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/13.png">
+<meta property="og:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/3.png">
+<meta property="og:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/10.png">
+<meta property="og:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/11.png">
+<meta property="og:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/12.png">
+<meta property="og:updated_time" content="2017-06-21T13:21:09.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring Web Flow RCE漏洞分析">
+<meta name="twitter:description" content="0x00 漏洞介绍在Spring Web Flow中，一定条件下，可以造成RCE。 0x01 漏洞分析5月31日，pivotal.io 爆出 Spring Web Flow 的 RCE 漏洞。从Spring官网中看出来，这个 RCE 评级较低，为 Minor。  我们先从 github 的 commit 来看  Spring 官方的修复，修改了执行表达式的函数。 ###　调用关系 我们知道，漏洞点">
+<meta name="twitter:image" content="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/5.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Manning23" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Manning23</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Spring-Web-Flow-RCE漏洞分析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/" class="article-date">
+  <time datetime="2017-06-13T13:14:46.000Z" itemprop="datePublished">2017-06-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Spring Web Flow RCE漏洞分析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="0x00-漏洞介绍"><a href="#0x00-漏洞介绍" class="headerlink" title="0x00 漏洞介绍"></a>0x00 漏洞介绍</h2><p>在Spring Web Flow中，一定条件下，可以造成RCE。</p>
+<h2 id="0x01-漏洞分析"><a href="#0x01-漏洞分析" class="headerlink" title="0x01 漏洞分析"></a>0x01 漏洞分析</h2><p>5月31日，<a href="https://pivotal.io/security/cve-2017-4971" target="_blank" rel="external">pivotal.io</a> 爆出 Spring Web Flow 的 RCE 漏洞。从Spring官网中看出来，这个 RCE 评级较低，为 Minor。</p>
+<p><img src="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/5.png"></p>
+<p>我们先从 github 的 commit 来看</p>
+<p><img src="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/4.png"></p>
+<p>Spring 官方的修复，修改了执行表达式的函数。</p>
+<p>###　调用关系</p>
+<p>我们知道，漏洞点为 addEmptyValueMapping 函数中的 Expression target = expressionParser.parseExpression(field, parserContext);所以我们看看是谁调用了 addEmptyValueMapping 。</p>
+<p><img src="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/8.png" width="80%"></p>
+<p>从上图可以看出，分别是两个函数调用了 addEmptyValueMapping 。</p>
+<ul>
+<li>addDefaultMappings 是从请求中遍历值，请求中的值可以被攻击者控制。</li>
+<li>addModelBindings 是从 binding 中遍历值传入 addEmptyValueMapping ，经过分析，攻击者不可控。</li>
+</ul>
+<h4 id="addDefaultMappings"><a href="#addDefaultMappings" class="headerlink" title="addDefaultMappings"></a>addDefaultMappings</h4><pre><code>protected void addDefaultMappings(DefaultMapper mapper, Set&lt;String&gt; parameterNames, Object model) {
+    for (String parameterName : parameterNames) {
+        if (fieldMarkerPrefix != null &amp;&amp; parameterName.startsWith(fieldMarkerPrefix)) {
+            String field = parameterName.substring(fieldMarkerPrefix.length());
+            if (!parameterNames.contains(field)) {
+                addEmptyValueMapping(mapper, field, model);
+            }
+        } else {
+            addDefaultMapping(mapper, parameterName, model);
+        }
+    }
+}
+</code></pre><h4 id="addModelBindings"><a href="#addModelBindings" class="headerlink" title="addModelBindings"></a>addModelBindings</h4><pre><code>protected void addModelBindings(DefaultMapper mapper, Set&lt;String&gt; parameterNames, Object model) {
+    for (Binding binding : binderConfiguration.getBindings()) {
+        String parameterName = binding.getProperty();
+        if (parameterNames.contains(parameterName)) {
+            addMapping(mapper, binding, model);
+        } else {
+            if (fieldMarkerPrefix != null &amp;&amp; parameterNames.contains(fieldMarkerPrefix + parameterName)) {
+                addEmptyValueMapping(mapper, parameterName, model);
+            }
+        }
+    }
+}
+</code></pre><p>接下来，我们看下 addDefaultMappings 的调用关系，addDefaultMappings 被 bind 调用，并且在 binderConfiguration 为空时，才能进入漏洞点。 binderConfiguration 这个值是由配置文件中是否有 binder 节点来控制的（这里需要注意的是程序执行到 bind 方法的前置条件是 view-state 节点中是否配置了 model 属性，即绑定的 javabean 对象是什么）。</p>
+<pre><code>protected MappingResults bind(Object model) {
+    if (logger.isDebugEnabled()) {
+        logger.debug(&quot;Binding to model&quot;);
+    }
+    DefaultMapper mapper = new DefaultMapper();
+    ParameterMap requestParameters = requestContext.getRequestParameters();
+    if (binderConfiguration != null) {
+        addModelBindings(mapper, requestParameters.asMap().keySet(), model);
+    } else {
+        addDefaultMappings(mapper, requestParameters.asMap().keySet(), model);
+    }
+    return mapper.map(requestParameters, model);
+}
+</code></pre><p>调用 bind 的函数是</p>
+<pre><code>public void processUserEvent() {
+    String eventId = getEventId();
+    if (eventId == null) {
+        return;
+    }
+    if (logger.isDebugEnabled()) {
+        logger.debug(&quot;Processing user event &apos;&quot; + eventId + &quot;&apos;&quot;);
+    }
+    Object model = getModelObject();
+    if (model != null) {
+        if (logger.isDebugEnabled()) {
+            logger.debug(&quot;Resolved model &quot; + model);
+        }
+        TransitionDefinition transition = requestContext.getMatchingTransition(eventId);
+        if (shouldBind(model, transition)) {
+            mappingResults = bind(model);
+            if (hasErrors(mappingResults)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(&quot;Model binding resulted in errors; adding error messages to context&quot;);
+                }
+                addErrorMessages(mappingResults);
+            }
+            if (shouldValidate(model, transition)) {
+                validate(model, transition);
+            }
+        }
+    } else {
+        if (logger.isDebugEnabled()) {
+            logger.debug(&quot;No model to bind to; done processing user event&quot;);
+        }
+    }
+    userEventProcessed = true;
+}
+</code></pre><p>整个流程如随风师傅所说，Spring Web Flow 的执行顺序和流程，由 flowcontroller 决定将请求交给那个 handler 去执行具体的流程，这里我们需要知道当用户请求有视图状态处理时，会决定当前事件下一个执行的流程，同时对于配置文件中我们配置的 view-state 元素，如果我们指定了数据的 model ，那么它会自动进行数据绑定。</p>
+<p>接下来，我也在 Spring Work Flow 的样例中尝试能否rce。结果是不能，这下就很意外了，发现了一个很有意思的地方。</p>
+<p>addEmptyValueMapping 中，表达式执行的地方，是个接口，存在三个定义。</p>
+<p><img src="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/9.png"></p>
+<p>分别是 </p>
+<ul>
+<li>org.springframework.binding.expression.spel.SpringELExpressionParser.parseExpression(String expression, ParserContext context) throws ParserException</li>
+<li>org.springframework.binding.expression.support.AbstractExpressionParser.parseExpression(String expressionString, ParserContext context) throws ParserException</li>
+<li>org.springframework.binding.expression.el.ELExpressionParser.parseExpression(String expressionString, ParserContext context) throws ParserException</li>
+</ul>
+<p>在默认流程中，遍历流入了下图的函数。</p>
+<p><img src="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/1.png"></p>
+<p>此函数中，数据流入了 doParseExpression(expressionString, context); 如下图。此函数不能动态解析我们的命令。</p>
+<p><img src="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/13.png"></p>
+<p>根据随风师傅的提示，修改 factoryCreator.setUseSpringBeanBinding(false) 。</p>
+<p>威胁参数流入了如下函数。</p>
+<p><img src="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/3.png"></p>
+<p>成功代码执行。</p>
+<p><img src="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/10.png"></p>
+<p><img src="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/11.png"></p>
+<p><img src="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/12.png"></p>
+<h2 id="0x02-调试总结"><a href="#0x02-调试总结" class="headerlink" title="0x02 调试总结"></a>0x02 调试总结</h2><p>本次调试，调试过程主要是对 Spring 框架的上手的练习。从 git 的修改内容一直到查找到漏洞点，及利用的整个过程。学习了很多。</p>
+<h2 id="0x03-参考资料"><a href="#0x03-参考资料" class="headerlink" title="0x03 参考资料"></a>0x03 参考资料</h2><p><a href="https://www.iswin.org/2017/06/11/CVE-2017-4971-Spring-WebFlow-RCE-Analysis/" target="_blank" rel="external">Spring WebFlow 远程代码执行漏洞分析(CVE-2017-4971)</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/" data-id="cj470znkx0003el02fcba4dwq" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">WordPress 4.6版本远程代码执行漏洞</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">May 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/">Spring Web Flow RCE漏洞分析</a>
+          </li>
+        
+          <li>
+            <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/">WordPress 4.6版本远程代码执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/21/Struts2-S046命令执行漏洞/">Struts2 S046命令执行漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/">Struts2 Jakarta模块Content-type命令执行漏洞(CVE-2017-5638)</a>
+          </li>
+        
+          <li>
+            <a href="/2016/05/05/ImageMagic初步分析/">ImageMagic初步分析</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 Manning23<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
