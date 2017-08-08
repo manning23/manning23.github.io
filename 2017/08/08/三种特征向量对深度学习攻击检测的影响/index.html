@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>三种特征向量对深度学习攻击检测的影响 | Manning23</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="0x00 文章介绍深度学习与网络安全结合是未来网络安全的一个大趋势，我们今天以基于深度学习的主流算法对SQL注入行为进行检测，来抛出三种特征向量对深度学习模型检测效果的影响。 0x01 深度学习简介深度学习（Deep Learning）是机器学习的分支，它试图使用包含复杂结构或由多重非线性变换构成的多个处理层对数据进行高层抽象的算法。 深度学习是机器学习中一种基于对数据进行表征学习的方法。深度学习">
+<meta property="og:type" content="article">
+<meta property="og:title" content="三种特征向量对深度学习攻击检测的影响">
+<meta property="og:url" content="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/index.html">
+<meta property="og:site_name" content="Manning23">
+<meta property="og:description" content="0x00 文章介绍深度学习与网络安全结合是未来网络安全的一个大趋势，我们今天以基于深度学习的主流算法对SQL注入行为进行检测，来抛出三种特征向量对深度学习模型检测效果的影响。 0x01 深度学习简介深度学习（Deep Learning）是机器学习的分支，它试图使用包含复杂结构或由多重非线性变换构成的多个处理层对数据进行高层抽象的算法。 深度学习是机器学习中一种基于对数据进行表征学习的方法。深度学习">
+<meta property="og:image" content="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/1.png">
+<meta property="og:image" content="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/5.png">
+<meta property="og:image" content="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/2.png">
+<meta property="og:image" content="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/3.png">
+<meta property="og:image" content="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/4.png">
+<meta property="og:updated_time" content="2017-08-08T10:40:44.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="三种特征向量对深度学习攻击检测的影响">
+<meta name="twitter:description" content="0x00 文章介绍深度学习与网络安全结合是未来网络安全的一个大趋势，我们今天以基于深度学习的主流算法对SQL注入行为进行检测，来抛出三种特征向量对深度学习模型检测效果的影响。 0x01 深度学习简介深度学习（Deep Learning）是机器学习的分支，它试图使用包含复杂结构或由多重非线性变换构成的多个处理层对数据进行高层抽象的算法。 深度学习是机器学习中一种基于对数据进行表征学习的方法。深度学习">
+<meta name="twitter:image" content="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/1.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Manning23" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Manning23</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Zoeken"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-三种特征向量对深度学习攻击检测的影响" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/08/08/三种特征向量对深度学习攻击检测的影响/" class="article-date">
+  <time datetime="2017-08-08T10:35:49.000Z" itemprop="datePublished">2017-08-08</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      三种特征向量对深度学习攻击检测的影响
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="0x00-文章介绍"><a href="#0x00-文章介绍" class="headerlink" title="0x00 文章介绍"></a>0x00 文章介绍</h2><p>深度学习与网络安全结合是未来网络安全的一个大趋势，我们今天以基于深度学习的主流算法对SQL注入行为进行检测，来抛出三种特征向量对深度学习模型检测效果的影响。</p>
+<h2 id="0x01-深度学习简介"><a href="#0x01-深度学习简介" class="headerlink" title="0x01 深度学习简介"></a>0x01 深度学习简介</h2><p>深度学习（Deep Learning）是机器学习的分支，它试图使用包含复杂结构或由多重非线性变换构成的多个处理层对数据进行高层抽象的算法。</p>
+<p>深度学习是机器学习中一种基于对数据进行表征学习的方法。深度学习的好处是用非监督式或半监督式的特征学习和分层特征提取高效算法来替代手工获取特征。</p>
+<p>在我们的实验中，使用的是Python深度学习库： <strong>TensorFlow</strong>。</p>
+<p><strong>使用的模型是：</strong></p>
+<ul>
+<li><p><strong>多层感知器</strong></p>
+<p>  多层感知器（Multilayer Perceptron,缩写MLP）是一种前向结构的人工神经网络，映射一组输入向量到一组输出向量。MLP可以被看作是一个有向图，由多个的节点层所组成，每一层都全连接到下一层。除了输入节点，每个节点都是一个带有非线性激活函数的神经元（或称处理单元）。<a href="https://zh.wikipedia.org/wiki/%E5%A4%9A%E5%B1%82%E6%84%9F%E7%9F%A5%E5%99%A8" target="_blank" rel="external">详细介绍</a></p>
+</li>
+<li><p><strong>卷积神经网络</strong></p>
+<p>  卷积神经网络（Convolutional Neural Network, CNN）是一种前馈神经网络，它的人工神经元可以响应一部分覆盖范围内的周围单元，对于大型图像处理有出色表现。卷积神经网络由一个或多个卷积层和顶端的全连通层（对应经典的神经网络）组成，同时也包括关联权重和池化层（pooling layer）。这一结构使得卷积神经网络能够利用输入数据的二维结构。与其他深度学习结构相比，卷积神经网络在图像和语音识别方面能够给出更优的结果。这一模型也可以使用反向传播算法进行训练。相比较其他深度、前馈神经网络，卷积神经网络需要估计的参数更少，使之成为一种颇具吸引力的深度学习结构。<a href="https://zh.wikipedia.org/wiki/%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C" target="_blank" rel="external">详细介绍</a></p>
+</li>
+<li><p><strong>循环神经网络</strong></p>
+<p>  递归神经网络（RNN）是两种人工神经网络的总称。一种是时间递归神经网络（recurrent neural network），另一种是结构递归神经网络（recursive neural network）。时间递归神经网络的神经元间连接构成有向图，而结构递归神经网络利用相似的神经网络结构递归构造更为复杂的深度网络。RNN一般指代时间递归神经网络。单纯递归神经网络因为无法处理随着递归，权重指数级爆炸或消失的问题（Vanishing gradient problem），难以捕捉长期时间关联；而结合不同的LSTM可以很好解决这个问题。<a href="https://zh.wikipedia.org/wiki/%E9%80%92%E5%BD%92%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C" target="_blank" rel="external">详细介绍</a></p>
+</li>
+</ul>
+<h3 id="实验中使用的网络结构"><a href="#实验中使用的网络结构" class="headerlink" title="实验中使用的网络结构"></a>实验中使用的网络结构</h3><h4 id="多层感知器"><a href="#多层感知器" class="headerlink" title="多层感知器"></a>多层感知器</h4><p>神经网络结构为：</p>
+<ul>
+<li>输入层</li>
+<li>隐藏层 L1 </li>
+<li>隐藏层 L2</li>
+<li>隐藏层 L3</li>
+<li>输出层</li>
+</ul>
+<p>每个隐藏层使用128个神经元，激活函数为relu。</p>
+<p><img src="/2017/08/08/三种特征向量对深度学习攻击检测的影响/1.png"></p>
+<p>上图为 <strong>TensorBoard</strong> 输出的结构图。</p>
+<h4 id="卷积神经网络"><a href="#卷积神经网络" class="headerlink" title="卷积神经网络"></a>卷积神经网络</h4><p>神经网络结构为：</p>
+<ul>
+<li>输入层</li>
+<li>卷积层 </li>
+<li>池化层 </li>
+<li>卷积层 </li>
+<li>池化层 </li>
+<li>全连接层</li>
+<li>输出层</li>
+</ul>
+<h4 id="循环神经网络"><a href="#循环神经网络" class="headerlink" title="循环神经网络"></a>循环神经网络</h4><p>神经网络结构为：</p>
+<ul>
+<li>输入层</li>
+<li>向前层</li>
+<li>向后层</li>
+<li>输出层</li>
+</ul>
+<p><img src="/2017/08/08/三种特征向量对深度学习攻击检测的影响/5.png" width="50%"></p>
+<p><strong>PS：训练集和测试集来自于360企业安全-天眼大数据平台，模型纯度良好。</strong></p>
+<h2 id="0x02-特征向量介绍"><a href="#0x02-特征向量介绍" class="headerlink" title="0x02 特征向量介绍"></a>0x02 特征向量介绍</h2><p>我们的特征向量转化，使用了三种方法，也是目前应对字符串比较好的方法选择。</p>
+<ul>
+<li>基于word2vec的特征向量</li>
+<li>基于词袋的特征向量</li>
+<li>基于fofe的特征向量</li>
+</ul>
+<h4 id="基于word2vec的特征向量"><a href="#基于word2vec的特征向量" class="headerlink" title="基于word2vec的特征向量"></a>基于word2vec的特征向量</h4><p>word2vec可以根据模型把词汇转化成一个多维的特征向量，在构建语句的特征时，我们采用暴力的向量相加的方式。</p>
+<p>word2vec在自然语言的实验中，可以很好的表示词语见的关系。具体可以参考 <a href="http://www.52nlp.cn/tag/word2vec" target="_blank" rel="external">维基百科语料中的词语相似度探索</a></p>
+<h4 id="基于词袋的特征向量"><a href="#基于词袋的特征向量" class="headerlink" title="基于词袋的特征向量"></a>基于词袋的特征向量</h4><p>词袋向量，我们在天眼实验室的攻击平台上，挑选了在SQL注入中最常出现的250个词汇，构建词袋模型。</p>
+<p>词袋模型的参考 <a href="http://blog.csdn.net/u010213393/article/details/40987945" target="_blank" rel="external">BoW（词袋）模型详细介绍</a></p>
+<h4 id="基于FOFE的特征向量"><a href="#基于FOFE的特征向量" class="headerlink" title="基于FOFE的特征向量"></a>基于FOFE的特征向量</h4><p>FOFE是一种简单精妙的rule-base编码方式。通俗的说就是，在one-hot的基础上利用了数值的大小表明了词的位置信息的一种编码形式。我们基于上面词袋模型的基础，加入了FOFE算法。</p>
+<p>FOFE算法的具体论文，来自江辉老师。 <a href="https://www.aclweb.org/anthology/P/P15/P15-2081.pdf?spm=5176.100239.blogcont118686.20.PWd2AD&amp;file=P15-2081.pdf" target="_blank" rel="external">The Fixed-Size Ordinally-Forgetting Encoding Method<br>for Neural Network Language Models</a></p>
+<h2 id="0x03-实验结果分析"><a href="#0x03-实验结果分析" class="headerlink" title="0x03 实验结果分析"></a>0x03 实验结果分析</h2><p>我们的训练数据为50000条，测试数据为500000条。</p>
+<p><img src="/2017/08/08/三种特征向量对深度学习攻击检测的影响/2.png" width="80%"></p>
+<p>三种向量结果都表现了非常好的准确度。</p>
+<p><img src="/2017/08/08/三种特征向量对深度学习攻击检测的影响/3.png" width="90%"></p>
+<p>从上图可以看出，基于FOFE的特征向量和词袋特征向量的表现并没有出现特别明显的差距，位置元素的融入并没有给FOFE特征向量带来明显的检测水平的提升。word2vec的向量在真实集表现的不是很好，其中的原因是我们建立句子，使用的是向量相加的粗暴方法，并不能体现word2vec对句子的属性体现。</p>
+<p><img src="/2017/08/08/三种特征向量对深度学习攻击检测的影响/4.png" width="70%"></p>
+<p>从上图可以看出，基于word2vec的特征向量的判断速度明显慢于其他两种方法。基于词袋的速度比基于fofe的速度快一点，本质原因是fofe算法的引入，带来了一定的计算量，符合速度降低的预期。</p>
+<h2 id="0x04-总结"><a href="#0x04-总结" class="headerlink" title="0x04 总结"></a>0x04 总结</h2><p>笔者认为，本次我们利用三种建立向量的方式和三种神经网络结构进行交叉实验，探讨三种方式的向量形式和神经网络结构之间的关系，算是抛砖引玉。本次实验最为惊讶的是 CNN 和 word2vec的组合在真实集表现的最好。基于FOFE的特征向量具有顺序的概念，但是未能在词袋模型的基础上带来更好的检测结果。</p>
+<p>深度神经网络在安全检测方面，可以带领我们进入检测“未知的未知”的能力层次，这点也是我们必须要对此付出努力的方向。路要一步一步走，我们会在这个方向上继续前行。</p>
+<h2 id="0x05-参考引用"><a href="#0x05-参考引用" class="headerlink" title="0x05 参考引用"></a>0x05 参考引用</h2><ul>
+<li><a href="https://zh.wikipedia.org/wiki/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0" target="_blank" rel="external">https://zh.wikipedia.org/wiki/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0</a></li>
+<li><a href="https://yq.aliyun.com/articles/118686?spm=5176.100239.0.0.g2XnLx" target="_blank" rel="external">https://yq.aliyun.com/articles/118686?spm=5176.100239.0.0.g2XnLx</a></li>
+<li><a href="http://www.52nlp.cn/tag/word2vec" target="_blank" rel="external">http://www.52nlp.cn/tag/word2vec</a></li>
+<li><a href="http://blog.csdn.net/u010213393/article/details/40987945" target="_blank" rel="external">http://blog.csdn.net/u010213393/article/details/40987945</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/" data-id="cj63ggoxy0009htfys12u651i" class="article-share-link">Delen</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Ouder</strong>
+      <div class="article-nav-title">Drupal Core CVE-2017-6920 远程代码执行漏洞分析</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archieven</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">August 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">May 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recente berichten</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/08/08/三种特征向量对深度学习攻击检测的影响/">三种特征向量对深度学习攻击检测的影响</a>
+          </li>
+        
+          <li>
+            <a href="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/">Drupal Core CVE-2017-6920 远程代码执行漏洞分析</a>
+          </li>
+        
+          <li>
+            <a href="/2017/06/22/Rise-of-the-machines读后感/">Rise of the machines读后感</a>
+          </li>
+        
+          <li>
+            <a href="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/">Spring Web Flow RCE漏洞分析</a>
+          </li>
+        
+          <li>
+            <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/">WordPress 4.6版本远程代码执行漏洞</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 Manning23<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

