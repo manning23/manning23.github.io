@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="Manning23"><title>逻辑回归算法分析与安全场景分析 · Manning23</title><meta name="description" content="这篇文章主要介绍的内容为：
+
+逻辑回归的算法介绍
+逻辑回归的数学原理
+h函数相关
+j函数相关
+
+
+逻辑回归的实际应用
+逻辑回归的总结
+网络安全场景不负责预测
+参考内容
+
+逻辑回归的算法介绍逻辑回归（Logistic regression）是机器学习分类算法的其中一种，核心思想是利用现有数据对分类边界"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">Manning23</a></h3><div class="description"><p>Technology &amp; Life</p></div></div></div><ul class="social-links"><li><a href="http://weibo.com/2077484845"><i class="fa fa-weibo"></i></a></li></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with Hexo&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">首页</a></li><li><a href="/about">关于</a></li><li><a href="/archives">归档</a></li></div><div class="information"><div class="back_btn"><li><a onclick="window.history.go(-1)" class="fa fa-chevron-left"> </a></li></div><div class="avatar"><img src="/images/avatar.png"></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>逻辑回归算法分析与安全场景分析</a></h3></div><div class="post-content"><p>这篇文章主要介绍的内容为：</p>
+<ul>
+<li>逻辑回归的算法介绍</li>
+<li>逻辑回归的数学原理<ul>
+<li>h函数相关</li>
+<li>j函数相关</li>
+</ul>
+</li>
+<li>逻辑回归的实际应用</li>
+<li>逻辑回归的总结</li>
+<li>网络安全场景不负责预测</li>
+<li>参考内容</li>
+</ul>
+<h5 id="逻辑回归的算法介绍"><a href="#逻辑回归的算法介绍" class="headerlink" title="逻辑回归的算法介绍"></a>逻辑回归的算法介绍</h5><p>逻辑回归（Logistic regression）是机器学习分类算法的其中一种，<strong>核心思想是利用现有数据对分类边界建立回归方程，以此进行分类。</strong>回归可以理解为最佳拟合，是一种选择最优分类的算法。</p>
+<p>逻辑归回中会有一些新词汇需要理解。</p>
+<ul>
+<li>h函数： 根据输入的数据预测类别的函数，Andrew Ng的公开课中称为hypothesis function。</li>
+<li>j函数： 我们需要一个机制去评估我们的h函数的好坏,j函数的作用是评估h函数的好坏,一般这个函数称为损失函数(loss function)或者错误函数(error function)。</li>
+</ul>
+<h5 id="逻辑回归的数学原理"><a href="#逻辑回归的数学原理" class="headerlink" title="逻辑回归的数学原理"></a>逻辑回归的数学原理</h5><h6 id="h函数相关（预测函数）"><a href="#h函数相关（预测函数）" class="headerlink" title="h函数相关（预测函数）"></a>h函数相关（预测函数）</h6><p>首先，我们先看看逻辑回归的预测函数，h函数！</p>
+<p><img src="lr_2.png" alt=""></p>
+<p>其中含有θ (又称：theta)的变量为（当x0=1时，可以进行矩阵变换）：</p>
+<p><img src="lr_1.png" alt=""></p>
+<p>h函数的原型函数为sigmoid函数，展示如下：</p>
+<p><img src="sigmoid_function.png" alt=""></p>
+<p>sigmoid方程的图形如下，sigmoid函数的取值范围为 (0,1) </p>
+<p><img src="sigmoid_pic.png" alt=""></p>
+<p>这里进行下小结，逻辑回归的预测函数使用sigmoid函数作为原型函数，然后对sigmoid函数的x进行替换，替换为一个多元一次方程。其中多元一次方程的θ为我要寻找最优组合的内容。</p>
+<h6 id="j函数相关"><a href="#j函数相关" class="headerlink" title="j函数相关"></a>j函数相关</h6><p>j函数的目标就是找到一组最佳θ，使得J(θ)的值最小。</p>
+<p><img src="lr_4.png" alt=""></p>
+<p><img src="lr_5.png" alt=""></p>
+<p>我们可以利用梯度下降算法来求得J(θ)的值最小，根据梯度下降法可得θ的更新过程。j=0 时，代表更新j向量的第0分量，j=1 时，代表更新j向量的第1分量，以此类推，为了方便理解，可以把j看成数组vector_j，j=0，就是更新vector_j[0]。α为学习步长。</p>
+<p><img src="lr_6.png" alt=""></p>
+<p>经过一些数学推导的最终形式如下（推导过程为对θ求偏导数）。</p>
+<p>ps：xj为x向量的第j分量，还可以理解为x数组的第j项，其实下图是对θ数组的第j项进行更新的算式，然而真正代码角度是对整个θ数组进行更新，也就是下下图的样子。</p>
+<p><img src="lr_7.png" alt=""></p>
+<p>当我们把上式向量化处理就得到了代码可以处理的形式。</p>
+<p><img src="lr_8.png" alt=""></p>
+<p>对比着代码看（代码出自《机器学习实战》）</p>
+<p><img src="lr_9.png" alt=""></p>
+<p>这里进行下小结，我们为了寻找最佳的θ组合，设置了J(θ)函数，我们利用已知数据（建模的训练数据）来寻找最优的θ组合使得J(θ)最小，而我们找最优θ组合的算法为梯度下降算法。</p>
+<h5 id="逻辑回归的实际应用"><a href="#逻辑回归的实际应用" class="headerlink" title="逻辑回归的实际应用"></a>逻辑回归的实际应用</h5><p>目前单机使用机器学习算法的python库为sklearn库，实例如下。</p>
+<p>使用该模型，需要手工调整函数的参数，这个需要对算法进行理解。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div></pre></td><td class="code"><pre><div class="line">#!/usr/bin/env python</div><div class="line"># -*- coding: utf-8 -*-</div><div class="line">from sklearn import linear_model</div><div class="line">from sklearn.metrics import classification_report</div><div class="line">from sklearn.metrics import precision_recall_curve, roc_curve, auc</div><div class="line"></div><div class="line">def main():</div><div class="line">    train_data = []</div><div class="line">    train_result = []</div><div class="line">    for i in open(&apos;train_data.txt&apos;).readlines():</div><div class="line">        &apos;&apos;&apos;</div><div class="line">        29119	3.440948	0.078331	1</div><div class="line">        前三位为训练数据，最后一位为训练结果</div><div class="line">        &apos;&apos;&apos;</div><div class="line">        r = i[:-2].split(&apos;\t&apos;)</div><div class="line">        train_data.append(r[:3])</div><div class="line">        train_result.append(r[-1])</div><div class="line"></div><div class="line">    clf = linear_model.LogisticRegression(max_iter=10000, C=1e5)</div><div class="line">    clf.fit(train_data, train_result)</div><div class="line"></div><div class="line">    print &apos;输出预测结果&apos;</div><div class="line">    print clf.predict([[68846, 9, 0.6]])</div><div class="line"></div><div class="line">    print &apos;输出预测概率分布&apos;</div><div class="line">    print clf.predict_proba([[68846, 9, 0.6]])</div><div class="line"></div><div class="line">    print &apos;decision function的系数&apos;</div><div class="line">    print clf.coef_</div><div class="line"></div><div class="line">    print &apos;decision function的截距&apos;</div><div class="line">    print clf.intercept_</div></pre></td></tr></table></figure>
+<p>输出结果为</p>
+<p><img src="lr_10.png" alt=""></p>
+<h5 id="逻辑回归的总结"><a href="#逻辑回归的总结" class="headerlink" title="逻辑回归的总结"></a>逻辑回归的总结</h5><p>Logistic Regression算法作为一个二分类算法，主要解决的是线性可分的问题，对于多分类算法，可以利用Softmax Regression算法。</p>
+<p>Softmax Regression是一般化的Logistic Regression，可以把Logistic Regression看成Softmax Regression的特例。</p>
+<p>那么Softmax Regression和Logistic Regression该怎么选择呢？参考Stanford的文章的内容。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">Softmax 回归 vs. k 个二元分类器</div><div class="line"></div><div class="line">如果你在开发一个音乐分类的应用，需要对k种类型的音乐进行识别，那么是选择使用 softmax 分类器呢，还是使用 logistic 回归算法建立 k 个独立的二元分类器呢？</div><div class="line"></div><div class="line">这一选择取决于你的类别之间是否互斥，例如，如果你有四个类别的音乐，分别为：古典音乐、乡村音乐、摇滚乐和爵士乐，那么你可以假设每个训练样本只会被打上一个标签（即：一首歌只能属于这四种音乐类型的其中一种），此时你应该使用类别数 k = 4 的softmax回归。（如果在你的数据集中，有的歌曲不属于以上四类的其中任何一类，那么你可以添加一个“其他类”，并将类别数 k 设为5。）</div><div class="line"></div><div class="line">如果你的四个类别如下：人声音乐、舞曲、影视原声、流行歌曲，那么这些类别之间并不是互斥的。例如：一首歌曲可以来源于影视原声，同时也包含人声 。这种情况下，使用4个二分类的 logistic 回归分类器更为合适。这样，对于每个新的音乐作品 ，我们的算法可以分别判断它是否属于各个类别。</div><div class="line"></div><div class="line">现在我们来看一个计算视觉领域的例子，你的任务是将图像分到三个不同类别中。(i) 假设这三个类别分别是：室内场景、户外城区场景、户外荒野场景。你会使用sofmax回归还是 3个logistic 回归分类器呢？ (ii) 现在假设这三个类别分别是室内场景、黑白图片、包含人物的图片，你又会选择 softmax 回归还是多个 logistic 回归分类器呢？</div><div class="line"></div><div class="line">在第一个例子中，三个类别是互斥的，因此更适于选择softmax回归分类器 。而在第二个例子中，建立三个独立的 logistic回归分类器更加合适。</div></pre></td></tr></table></figure>
+<h5 id="网络安全场景不负责预测"><a href="#网络安全场景不负责预测" class="headerlink" title="网络安全场景不负责预测"></a>网络安全场景不负责预测</h5><p>逻辑回归算法作为一个二分类机器学习算法，主要优势是学习速度快，算法好理解，预测速度快等特点，并且神经网络在神经元上也是采用的是逻辑回归算法，因此在这个深度学习的大背景下，安全人员还是要学习逻辑回归算法。</p>
+<p>对于在安全攻防上使用逻辑回归算法，我们先要明白逻辑回归算法的本质：逻辑回归是分类算法。</p>
+<p><strong>吸星</strong>是安全在机器学习实践上一个非常好的例子，由于吸星使用的是朴素贝叶斯分类算法，那么吸星能不能使用逻辑回顾呢？效果如何呢？这是值得实践的。</p>
+<p><strong>异常流量识别</strong>，由于瞬时流量或者流量区间中会存在非常多的属性，而且异常流量识别属于二分类，逻辑回归对于异常流量监测问题，这也是非常值得实践的。</p>
+<p><strong>网站异常URL识别</strong>，对于一个网站，URL的形式具有一定特征的，那么如果被种植了webshell，那么webshell的URL可能会与正常URL存在差异，因此利用此逻辑回归也是能解决这类问题的。</p>
+<p>其实总结起来就是，只要每一条数据可以有多个属性，就可以利用逻辑回归。</p>
+<h5 id="参考内容"><a href="#参考内容" class="headerlink" title="参考内容"></a>参考内容</h5><p><a href="http://ufldl.stanford.edu/wiki/index.php/Softmax%E5%9B%9E%E5%BD%92" target="_blank" rel="external">http://ufldl.stanford.edu/wiki/index.php/Softmax%E5%9B%9E%E5%BD%92</a></p>
+<p><a href="http://blog.csdn.net/dongtingzhizi/article/details/15962797" target="_blank" rel="external">http://blog.csdn.net/dongtingzhizi/article/details/15962797</a></p>
+</div><div class="post-footer"><div class="meta"><div class="info"><i class="fa fa-sun-o"></i><span class="date">2016-04-06</span><i class="fa fa-tag"></i></div></div></div></div><div class="share"><div class="evernote"><a href="javascript:(function(){EN_CLIP_HOST='http://www.evernote.com';try{var%20x=document.createElement('SCRIPT');x.type='text/javascript';x.src=EN_CLIP_HOST+'/public/bookmarkClipper.js?'+(new%20Date().getTime()/100000);document.getElementsByTagName('head')[0].appendChild(x);}catch(e){location.href=EN_CLIP_HOST+'/clip.action?url='+encodeURIComponent(location.href)+'&amp;title='+encodeURIComponent(document.title);}})();" ref="nofollow" target="_blank" class="fa fa-bookmark"></a></div><div class="weibo"><a href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));" class="fa fa-weibo"></a></div><div class="twitter"><a href="http://twitter.com/home?status=,http://yoursite.com/2016/04/06/逻辑回归算法分析与安全场景分析/,Manning23,逻辑回归算法分析与安全场景分析,;" class="fa fa-twitter"></a></div></div><div class="pagination"><ul class="clearfix"><li class="pre pagbuttons"><a role="navigation" href="/2016/04/23/悟空CRM三处漏洞分析/" title="悟空CRM三处漏洞分析" class="btn">上一篇</a></li><li class="next pagbuttons"><a role="navigation" href="/2016/03/23/三个白猫抓flag鼠系列1writeup/" title="三个白猫抓flag鼠系列1writeup" class="btn">下一篇</a></li></ul></div></div></div></div></div><script src="/js/jquery.js"></script><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script></body></html>
