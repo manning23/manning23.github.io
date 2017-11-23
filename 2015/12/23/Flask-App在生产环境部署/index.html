@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="Manning23"><title>Flask App在生产环境部署 · Manning23</title><meta name="description" content="主线流程本次部署所使用的应用。
+服务器：Nginx，uWSGI。
+Web框架：Flask
+安装步骤：
+
+apt-get install nginx-full
+pip install uwsgi
+pip install flask
+
+1，修改/etc/nginx/sites-enabled/defau"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">Manning23</a></h3><div class="description"><p>Technology &amp; Life</p></div></div></div><ul class="social-links"><li><a href="http://weibo.com/2077484845"><i class="fa fa-weibo"></i></a></li></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with Hexo&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">首页</a></li><li><a href="/about">关于</a></li><li><a href="/archives">归档</a></li></div><div class="information"><div class="back_btn"><li><a onclick="window.history.go(-1)" class="fa fa-chevron-left"> </a></li></div><div class="avatar"><img src="/images/avatar.png"></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>Flask App在生产环境部署</a></h3></div><div class="post-content"><h2 id="主线流程"><a href="#主线流程" class="headerlink" title="主线流程"></a>主线流程</h2><p>本次部署所使用的应用。</p>
+<p>服务器：Nginx，uWSGI。</p>
+<p>Web框架：Flask</p>
+<p>安装步骤：</p>
+<ul>
+<li>apt-get install nginx-full</li>
+<li>pip install uwsgi</li>
+<li>pip install flask</li>
+</ul>
+<p>1，修改/etc/nginx/sites-enabled/default 文件</p>
+<p><img src="default.png" alt=""> </p>
+<p>2，编写uwsgi.xml文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">&lt;uwsgi&gt;</div><div class="line">    	&lt;pythonpath&gt;/home/star&lt;/pythonpath&gt;</div><div class="line">    	&lt;module&gt;starweb&lt;/module&gt;  </div><div class="line">    	&lt;callable&gt;app&lt;/callable&gt;  </div><div class="line">    	&lt;socket&gt;127.0.0.1:8000&lt;/socket&gt;  </div><div class="line">    	&lt;master/&gt;</div><div class="line">    	&lt;processes&gt;5&lt;/processes&gt;             </div><div class="line">    	&lt;memory-report/&gt;</div><div class="line">    	&lt;enable-threads/&gt;</div><div class="line">&lt;/uwsgi&gt;</div></pre></td></tr></table></figure>
+<p>3，编写app.py</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">from flask import Flask</div><div class="line">app = Flask(__name__)</div><div class="line"></div><div class="line">@app.route(&apos;/&apos;)</div><div class="line">def hello_world():</div><div class="line">   	return &quot;Hello World!&quot;</div><div class="line"></div><div class="line">if __name__ == &apos;__main__&apos;:</div><div class="line">   	app.run(host=&apos;0.0.0.0&apos;, port=8000)</div></pre></td></tr></table></figure>
+<p>4，执行命令</p>
+<p>uwsgi -x uwsgi.xml -d /tmp/uwsgi.log</p>
+<p>/etc/init.d/nginx restart</p>
+<p>至此nginx的80端口就会监听到flask应用。</p>
+<p>5，流程总结</p>
+<p>uwsgi启动目标app，监听app默认输出地端口，同时nginx也监听此端口，并且重定向到80端口，至此，浏览器可以访问80端口查看页面内容。</p>
+<p><img src="hello.png" alt=""> </p>
+<h2 id="细节"><a href="#细节" class="headerlink" title="细节"></a>细节</h2><p>需要配置<enable-threads>才能启动flask应用中的线程，否则uwsgi不启动代码中的线程。</enable-threads></p>
+</div><div class="post-footer"><div class="meta"><div class="info"><i class="fa fa-sun-o"></i><span class="date">2015-12-23</span><i class="fa fa-tag"></i></div></div></div></div><div class="share"><div class="evernote"><a href="javascript:(function(){EN_CLIP_HOST='http://www.evernote.com';try{var%20x=document.createElement('SCRIPT');x.type='text/javascript';x.src=EN_CLIP_HOST+'/public/bookmarkClipper.js?'+(new%20Date().getTime()/100000);document.getElementsByTagName('head')[0].appendChild(x);}catch(e){location.href=EN_CLIP_HOST+'/clip.action?url='+encodeURIComponent(location.href)+'&amp;title='+encodeURIComponent(document.title);}})();" ref="nofollow" target="_blank" class="fa fa-bookmark"></a></div><div class="weibo"><a href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));" class="fa fa-weibo"></a></div><div class="twitter"><a href="http://twitter.com/home?status=,http://yoursite.com/2015/12/23/Flask-App在生产环境部署/,Manning23,Flask App在生产环境部署,;" class="fa fa-twitter"></a></div></div><div class="pagination"><ul class="clearfix"><li class="pre pagbuttons"><a role="navigation" href="/2016/05/05/ImageMagic初步分析/" title="ImageMagic初步分析" class="btn">上一篇</a></li><li class="next pagbuttons"><a role="navigation" href="/2015/12/22/Java反序列化内容/" title="Java反序列化内容" class="btn">下一篇</a></li></ul></div></div></div></div></div><script src="/js/jquery.js"></script><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script></body></html>
