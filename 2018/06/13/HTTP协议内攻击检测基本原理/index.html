@@ -1,0 +1,71 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="Manning23"><title>HTTP协议内攻击检测基本原理 · Manning23</title><meta name="description" content="网络攻击最重要的载体协议是HTTP协议，能利用HTTP协议进行的网络攻击方式多样，不限于以下内容。
+
+SQLI，XSS，CSRF，RCE，LFI，RFI，Brute Force，SSRF，SSTI，Deserialization，XXE。
+
+我们在对HTTP攻击检测时，由于各种原因，我们无法做到一个"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">Manning23</a></h3><div class="description"><p>Technology &amp; Life</p></div></div></div><ul class="social-links"><li><a href="http://weibo.com/2077484845"><i class="fa fa-weibo"></i></a></li></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with Hexo&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">首页</a></li><li><a href="/about">关于</a></li><li><a href="/archives">归档</a></li></div><div class="information"><div class="back_btn"><li><a onclick="window.history.go(-1)" class="fa fa-chevron-left"> </a></li></div><div class="avatar"><img src="/images/avatar.png"></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>HTTP协议内攻击检测基本原理</a></h3></div><div class="post-content"><p>网络攻击最重要的载体协议是HTTP协议，能利用HTTP协议进行的网络攻击方式多样，不限于以下内容。</p>
+<ul>
+<li>SQLI，XSS，CSRF，RCE，LFI，RFI，Brute Force，SSRF，SSTI，Deserialization，XXE。</li>
+</ul>
+<p>我们在对HTTP攻击检测时，由于各种原因，我们无法做到一个理想状态，我会以四个从攻击者视角的例子对此加以说明。</p>
+<h2 id="S2-045远程代码执行漏洞（CVE-2017-5638）"><a href="#S2-045远程代码执行漏洞（CVE-2017-5638）" class="headerlink" title="S2-045远程代码执行漏洞（CVE-2017-5638）"></a>S2-045远程代码执行漏洞（CVE-2017-5638）</h2><p>这个漏洞是J2EE框架Struts2存在远程代码执行，官方定义为高危，这个漏洞的触发点是：Struts2框架对于请求的HTTP数据包的Content-type字段处理不当造成的，攻击者只要在Content-type字段加上攻击载荷即可，因此攻击方式利用非常简单。</p>
+<p>Struts2的攻击检测理论上不是很难，由于利用方式都是要先bypass Struts2的ognl沙盒然后再进行java的代码执行操作，这个漏洞利用流程跟之前Struts2的漏洞利用思路上是一致的，而waf设备之前的检测规则对S2-045的payload还是能检测的，那么为什么绝大部分安全检测设备没有检测到呢？答案非常简单，就是没有对HTTP的Content-type字段进行检查，因为检测系统的设计者没有认识到攻击可以出现在HTTP的Content-type字段。</p>
+<h2 id="2015年12月的Joomla反序列化漏洞-0-day"><a href="#2015年12月的Joomla反序列化漏洞-0-day" class="headerlink" title="2015年12月的Joomla反序列化漏洞 0-day"></a>2015年12月的Joomla反序列化漏洞 0-day</h2><p>说到2015年年底的漏洞界，最著名的毫无争议是Java反序列化漏洞组，但是这个Joomla反序列化漏洞也非常让人兴奋，这个漏洞起始于一个老外发现自己服务器的访问日志存在一段非常非常特别的访问。</p>
+<pre><code>2015 Dec 12 16:49:07 clienyhidden.access.log
+ Src IP: 74.3.170.33 / CAN / Alberta
+ 74.3.170.33 - - [12/Dec/2015:16:49:40 -0500] &quot;GET /contact/ HTTP/1.1&quot; 403 5322 &quot;http://google.com/&quot; &quot;}__test|O:21:\x22JDatabaseDriverMysqli\x22:3: ..
+ {s:2:\x22fc\x22;O:17:\x22JSimplepieFactory\x22:0: .. {}s:21:\x22\x5C0\x5C0\x5C0disconnectHandlers\x22;a:1:{i:0;a:2:{i:0;O:9:\x22SimplePie\x22:5:..
+ {s:8:\x22sanitize\x22;O:20:\x22JDatabaseDriverMysql\x22:0:{}s:8:\x22feed_url\x22;s:60:..
+</code></pre><p>这段信息瞬间就在安全圈爆炸，安全研究者分析漏洞，最终发现特定的字符可以导致截断字符消失，接着反序列化串便可以进入unserialize函数。</p>
+<p>这个漏洞的攻击载荷存在于User-Agent字段，这个字段往往存储的只是用户的浏览器信息。由于对攻击的理解不到位，这个漏洞的检测在当时也很不如意。</p>
+<h2 id="S2-052远程代码执行漏洞（CVE-2017-9805）"><a href="#S2-052远程代码执行漏洞（CVE-2017-9805）" class="headerlink" title="S2-052远程代码执行漏洞（CVE-2017-9805）"></a>S2-052远程代码执行漏洞（CVE-2017-9805）</h2><p>S2-052虽然是Struts2家族的RCE漏洞，但是跟之前的S系列的RCE漏洞都不一样，这个漏洞的本质是Java反序列化漏洞。</p>
+<p>这里做下简单的科普，明白的可以略过这段内容。什么是反序列化呢？我们都知道，代码中存在对象的概念，本质上对象是一种数据结构。出于一些原因，我们有个需求，要在不同进程中传递这种对象，因此这里就引入了序列化和反序列化。</p>
+<p><strong>序列化</strong>可以理解为：把内存中的对象转换成一种可以在进程间传递的内容。其载体的形式可以为xml，json，yaml，bin等；<strong>反序列化</strong>可以理解为：把序列化的串反解析成对象的过程。由于载体的多种形式，就会出现很多种反序列化漏洞，比如有名的java反序列化，json反序列化，xml反序列化，yaml反序列化等。</p>
+<p>在这个漏洞中，漏洞触发点是REST插件在解析请求中的xml文件时，调用了XStreamHandler，传入的数据会被默认进行反序列化，如果当传入的xml是个经过XStream序列化的恶意对象时，便造成反序列化漏洞。（S2-052的序列化载体就是xml）</p>
+<p>在对S2-052进行检测时，难度是很大的，做好很不容易。因为最开始的poc生成是利用marshalsec工具生成ImageIO的远程代码序列化对象，这个poc适用的环境是java1.8以上，这是个非常苛刻的条件。但是之后又有人发现，CommonsCollections5 + XStream和CommonsCollections6 + XStream的利用组合适用于java1.7的环境。所以在做特征检测的时候，考虑到所有的利用形式需要对攻击利用具有非常深厚的理解。</p>
+<h2 id="各种SQL注入的bypass"><a href="#各种SQL注入的bypass" class="headerlink" title="各种SQL注入的bypass"></a>各种SQL注入的bypass</h2><p>在2016年4月，出了一个让各家安全厂商都很头疼的bypass sql检测的bypass方式，我记得漏洞标题是《Bypass阿里云盾、百度云加速、安全宝、安全狗、云锁、360主机卫士SQL注入防御》，现在来看bypass的方式，其实这个方法的利用方式在sqlmap中早已涉及，只是大家都没太注意罢了。本质上利用注释符号与换行符号的组合，再加以各种干扰字符的插入，导致像下面的内容是可以执行的。</p>
+<pre><code>http://192.168.103.129/manning/manning_test_mysql.php?id=1%23
+我们为什么要绕过waf呢 
+script&gt;alert(1)&lt;/script&gt;
+%0aunion select 1,2,3
+</code></pre><p><img src="/2018/06/13/HTTP协议内攻击检测基本原理/pic6.png" width="80%"></p>
+<p>在检测时，由于先匹配出来的一定是xss的特征，导致告警错误的出现，如果在每个空格处都加以这种bypass方式的使用，waf是很难处理的。除非牺牲误报率为代价，否则对抗变形还是很困难的。</p>
+<h2 id="常规HTTP攻击检测做法"><a href="#常规HTTP攻击检测做法" class="headerlink" title="常规HTTP攻击检测做法"></a>常规HTTP攻击检测做法</h2><p>常规HTTP攻击检测做法流程如下：</p>
+<ul>
+<li>HTTP数据字段拆解</li>
+<li>重要字段特征匹配（多字段关联匹配）</li>
+</ul>
+<p>我认为这种做法是一种老派的做法，由于性能的要求（HTTP数据包在流量中的比例巨大，占据检测计算量消耗的大部分），检测的字段位置大多数都是URI字段和DATA字段，这就导致检测的范围不够完整，因此当面对一些意想不到的漏洞时，效果往往不尽如人意。从例子1，例子2中我们也能看出这个观点。当然如果扩大检测范围，误报的产生也是不可避免。另外不知从何时起，检测设备只关注uri字段，让我非常费解。</p>
+<p>特征匹配在安全检测领域是成熟的，高效性，准确性，可维护性都是特征匹配重要的优势。但是特征匹配技术的检测能力体现，往往取决于规则编写者对于攻击理解的程度，对攻击的理解不充分会直接影响检测规则的质量。我们从例子3，例子4可以很好的看出这点。</p>
+<p>总结下来，规则检测存在两点不足。</p>
+<ul>
+<li>检测位置不充分，且易产生误报</li>
+<li>检测的能力体现取决于规则编写者</li>
+</ul>
+<h2 id="适应当今攻防对抗，检测应该具备的能力"><a href="#适应当今攻防对抗，检测应该具备的能力" class="headerlink" title="适应当今攻防对抗，检测应该具备的能力"></a>适应当今攻防对抗，检测应该具备的能力</h2><p>当今攻防对抗的升级，不光有攻击载荷变化的情况，还有漏洞点出现在承载协议任意位置的情况。那么有效的检测应该是什么样子呢？我会从整体质量、效率、运营上提出我的观点。</p>
+<p>首先在检测能力和质量上</p>
+<ul>
+<li>检测内容不区分协议字段</li>
+<li>具备对抗混淆的能力</li>
+<li>能定义正常，异常，攻击</li>
+</ul>
+<p>接着在检测效率上</p>
+<ul>
+<li>高于正则匹配的效率</li>
+</ul>
+<p>最后在日常运营上</p>
+<ul>
+<li>具备高效的处理误报与漏报</li>
+<li>能高效的进行应急响应</li>
+</ul>
+<h2 id="谈一些工作中的实践"><a href="#谈一些工作中的实践" class="headerlink" title="谈一些工作中的实践"></a>谈一些工作中的实践</h2><p>在实际工作中，我们利用机器学习技术进行了大量实践，进行了包括异常识别、攻击识别等内容，取得了卓越的效果。</p>
+<p>比如我们现在每天处理的数据量在1800亿左右的HTTP访问数据，其中发现异常请求数据只有8000万次。这种检测量级的下降，让我们能做更深入的包检测。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文从开始的介绍历史漏洞出发，阐述的了当前检测技术的一些不足，并以此展望了理想检测技术应该具备的能力，以及介绍了我们当前的一些实践结果。</p>
+<h2 id="广告时间"><a href="#广告时间" class="headerlink" title="广告时间"></a>广告时间</h2><pre><code>我们目前正在打造一款全部由AI技术构建的入侵感知系统，目前系统集群日处理数据达到1800亿次。
+
+如果对我们做的产品感兴趣，或者想加入我们，请联系 emhhbmd4aW4xW2F0XTM2MC5jbgo=
+
+城市：北京
+</code></pre><h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><pre><code>https://blog.sucuri.net/2015/12/remote-command-execution-vulnerability-in-joomla.html
+http://blog.csdn.net/rossrocket/article/details/67674290
+https://www.anquanke.com/post/id/83119
+</code></pre></div><div class="post-footer"><div class="meta"><div class="info"><i class="fa fa-sun-o"></i><span class="date">2018-06-13</span><i class="fa fa-tag"></i></div></div></div></div><div class="share"><div class="evernote"><a href="javascript:(function(){EN_CLIP_HOST='http://www.evernote.com';try{var%20x=document.createElement('SCRIPT');x.type='text/javascript';x.src=EN_CLIP_HOST+'/public/bookmarkClipper.js?'+(new%20Date().getTime()/100000);document.getElementsByTagName('head')[0].appendChild(x);}catch(e){location.href=EN_CLIP_HOST+'/clip.action?url='+encodeURIComponent(location.href)+'&amp;title='+encodeURIComponent(document.title);}})();" ref="nofollow" target="_blank" class="fa fa-bookmark"></a></div><div class="weibo"><a href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));" class="fa fa-weibo"></a></div><div class="twitter"><a href="http://twitter.com/home?status=,http://yoursite.com/2018/06/13/HTTP协议内攻击检测基本原理/,Manning23,HTTP协议内攻击检测基本原理,;" class="fa fa-twitter"></a></div></div><div class="pagination"><ul class="clearfix"><li class="next pagbuttons"><a role="navigation" href="/2018/04/02/Windows提权基本原理-Windows-Privilege-Escalation-Fundamentals/" title="Windows提权基本原理(Windows Privilege Escalation Fundamentals)" class="btn">下一篇</a></li></ul></div></div></div></div></div><script src="/js/jquery.js"></script><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script></body></html>
