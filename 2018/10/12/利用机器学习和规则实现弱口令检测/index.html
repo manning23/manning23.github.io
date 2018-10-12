@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="Manning23"><title>利用机器学习和规则实现弱口令检测 · Manning23</title><meta name="description" content="弱口令介绍
+弱口令(weak password) 没有严格和准确的定义，通常认为容易被别人（他们有可能对你很了解）猜测到或被破解工具破解的口令均为弱口令。弱口令指的是仅包含简单数字和字母的口令，例如“123”、“abc”等，因为这样的口令很容易被别人破解，从而使用户的互联网账号受到他人控制，因此不推"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">Manning23</a></h3><div class="description"><p>Technology &amp; Life</p></div></div></div><ul class="social-links"><li><a href="http://weibo.com/2077484845"><i class="fa fa-weibo"></i></a></li></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with Hexo&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">首页</a></li><li><a href="/about">关于</a></li><li><a href="/archives">归档</a></li></div><div class="information"><div class="back_btn"><li><a onclick="window.history.go(-1)" class="fa fa-chevron-left"> </a></li></div><div class="avatar"><img src="/images/avatar.png"></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>利用机器学习和规则实现弱口令检测</a></h3></div><div class="post-content"><h2 id="弱口令介绍"><a href="#弱口令介绍" class="headerlink" title="弱口令介绍"></a>弱口令介绍</h2><p><img src="/2018/10/12/利用机器学习和规则实现弱口令检测/5.png" width="50%"></p>
+<p>弱口令(weak password) 没有严格和准确的定义，通常认为容易被别人（他们有可能对你很了解）猜测到或被破解工具破解的口令均为弱口令。弱口令指的是仅包含简单数字和字母的口令，例如“123”、“abc”等，因为这样的口令很容易被别人破解，从而使用户的互联网账号受到他人控制，因此不推荐用户使用。</p>
+<p>弱口令产生原因是与个人习惯相关与意识相关，为了避免忘记密码，使用一个非常容易记住的密码，或者是直接采用系统的默认密码等。相关的安全意识不够，总认为不会有人会猜到我这个弱口令的，相关的安全意识不够，总认为不会有人会猜到我这个弱口令的。</p>
+<p>弱口令的危害极大，通过系统弱口令，可被黑客直接获得系统控制权限。</p>
+<h2 id="检测背景"><a href="#检测背景" class="headerlink" title="检测背景"></a>检测背景</h2><p>我们检测的背景是基于流量，通过底层流量抓取技术（底层抓取技术利用的是dpdk技术），获得http的请求内容、响应内容。如下图所示。</p>
+<p><img src="/2018/10/12/利用机器学习和规则实现弱口令检测/1.png" width="80%"></p>
+<p>弱口令检测本质是利用机器学习识别登陆页面（文本识别），再利用专家规则进行弱口令鉴别、登陆成功鉴别两步。</p>
+<h2 id="检测逻辑"><a href="#检测逻辑" class="headerlink" title="检测逻辑"></a>检测逻辑</h2><p>接下来让我们看下检测的逻辑。</p>
+<p><img src="/2018/10/12/利用机器学习和规则实现弱口令检测/2.png" width="30%"></p>
+<ol>
+<li>首先通过底层抓取技术获得输入数据</li>
+<li>利用机器学习技术（逻辑回归算法）获得登录页面请求</li>
+<li>利用专家规则进行弱口令判断（top 1000）</li>
+<li>利用专家规则进行登录成功判断</li>
+</ol>
+<h2 id="关键技术补充解释"><a href="#关键技术补充解释" class="headerlink" title="关键技术补充解释"></a>关键技术补充解释</h2><ol>
+<li>在检测逻辑的步骤2处，在无有效数据的情况下，可以利用规则进行登录页面判断。</li>
+<li>机器学习模块中，特征向量关键提取点有：post、login、account、postLogin、Logins、loginByAccount、password、pwd、username、user、email、dologin、id、user_id等。训练数据大概为500左右的登录页面。利用逻辑回归进行二分类。机器学习模块的准确度为95%左右。</li>
+<li>弱口令判断断采用的是正则匹配。</li>
+<li><p>登录成功判断主要分为两种（欢迎补充）</p>
+<ol>
+<li><p>系统为用户种cookie并返回给浏览器200</p>
+<p> <img src="/2018/10/12/利用机器学习和规则实现弱口令检测/3.png" width="80%"></p>
+</li>
+<li><p>系统为用户location跳转并返回给浏览器30x</p>
+<p> <img src="/2018/10/12/利用机器学习和规则实现弱口令检测/4.png" width="80%"></p>
+</li>
+</ol>
+</li>
+</ol>
+<h2 id="系统口令强制限制"><a href="#系统口令强制限制" class="headerlink" title="系统口令强制限制"></a>系统口令强制限制</h2><p>强制对所有的管理系统账号密码强度必须达到一定的级别。不可在使用简单的admin、123456等弱密码了，修改密码为复杂密码并加密保存，建议密码包含大小写字母，数据和特殊符号，密码长度不低于八位，如果网站存在数据泄漏漏洞（如sql注入漏洞），务必修复漏洞。</p>
+<p>设置密码通常遵循以下原则：</p>
+<ul>
+<li>不使用空口令或系统缺省的口令，这些口令众所周之，为典型的弱口令。</li>
+<li>口令长度不小于8 个字符。</li>
+<li>口令不应该为连续的某个字符（例如：AAAAAAAA）或重复某些字符的组合（例如：tzf.tzf.）。</li>
+<li>口令应该为以下四类字符的组合，大写字母(A-Z)、小写字母(a-z)、数字(0-9)和特殊字符。每类字符至少包含一个。如果某类字符只包含一个，那么该字符不应为首字符或尾字符。</li>
+<li>口令中不应包含本人、父母、子女和配偶的姓名和出生日期、纪念日期、登录名、E-mail 地址等等与本人有关的信息，以及字典中的单词。</li>
+<li>口令不应该为用数字或符号代替某些字母的单词。</li>
+<li>口令应该易记且可以快速输入，防止他人从你身后很容易看到你的输入。</li>
+<li>至少90 天内更换一次口令，防止未被发现的入侵者继续使用该口令。</li>
+</ul>
+<h2 id="文章总结"><a href="#文章总结" class="headerlink" title="文章总结"></a>文章总结</h2><ol>
+<li>机器学习的使用，使得登陆页判断有了更好的泛化能力，这点比正则表达式强很多。</li>
+<li>整个判断模块的误报率还是很高，分析其原因为：软件系统判断登录成功的逻辑各不相同，导致没有固定的判断逻辑，因而会产生误报。这方面想要降低误报，需要一条一条的进行专家规则细化与规则添加。</li>
+<li>该系统在公司内运营发现，确实有不少系统存在弱口令行为，由于弱口令的风险极高，其他互联网公司需自查。</li>
+</ol>
+<h2 id="广告时间"><a href="#广告时间" class="headerlink" title="广告时间"></a>广告时间</h2><p>我们目前正在打造一款全部由AI技术构建的入侵感知系统，目前系统集群日处理数据达到1800亿次。如果对我们做的产品感兴趣，或者想加入我们，请联系 emhhbmd4aW4xW2F0XTM2MC5jbgo=</p>
+<p>城市：北京</p>
+<h2 id="文章引用"><a href="#文章引用" class="headerlink" title="文章引用"></a>文章引用</h2><ul>
+<li><a href="https://www.cnblogs.com/backlion/p/9007304.html" target="_blank" rel="external">https://www.cnblogs.com/backlion/p/9007304.html</a></li>
+</ul>
+</div><div class="post-footer"><div class="meta"><div class="info"><i class="fa fa-sun-o"></i><span class="date">2018-10-12</span><i class="fa fa-tag"></i></div></div></div></div><div class="share"><div class="evernote"><a href="javascript:(function(){EN_CLIP_HOST='http://www.evernote.com';try{var%20x=document.createElement('SCRIPT');x.type='text/javascript';x.src=EN_CLIP_HOST+'/public/bookmarkClipper.js?'+(new%20Date().getTime()/100000);document.getElementsByTagName('head')[0].appendChild(x);}catch(e){location.href=EN_CLIP_HOST+'/clip.action?url='+encodeURIComponent(location.href)+'&amp;title='+encodeURIComponent(document.title);}})();" ref="nofollow" target="_blank" class="fa fa-bookmark"></a></div><div class="weibo"><a href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));" class="fa fa-weibo"></a></div><div class="twitter"><a href="http://twitter.com/home?status=,http://yoursite.com/2018/10/12/利用机器学习和规则实现弱口令检测/,Manning23,利用机器学习和规则实现弱口令检测,;" class="fa fa-twitter"></a></div></div><div class="pagination"><ul class="clearfix"><li class="next pagbuttons"><a role="navigation" href="/2018/06/13/HTTP协议内攻击检测基本原理/" title="HTTP协议内攻击检测基本原理" class="btn">下一篇</a></li></ul></div></div></div></div></div><script src="/js/jquery.js"></script><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script></body></html>
