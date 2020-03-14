@@ -1,11 +1,56 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="Manning23"><title>网络安全NTA技术基本分析 · Manning23</title><meta name="description" content="1、前言​本文章，主要参考资料为，《Market Guide for Network Traffic Analysis》by Gartner；《Network Traffic Analysis》 by awake；《NTA以及空间与时间的防御——山石网科的安全理解》by 山石网科；2020年1月，与"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">Manning23</a></h3><div class="description"><p>Technology &amp; Life</p></div></div></div><ul class="social-links"><li><a href="http://weibo.com/2077484845"><i class="fa fa-weibo"></i></a></li></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with Hexo&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">首页</a></li><li><a href="/about">关于</a></li><li><a href="/archives">归档</a></li></div><div class="information"><div class="back_btn"><li><a onclick="window.history.go(-1)" class="fa fa-chevron-left"> </a></li></div><div class="avatar"><img src="/images/avatar.png"></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>网络安全NTA技术基本分析</a></h3></div><div class="post-content"><h1 id="1、前言"><a href="#1、前言" class="headerlink" title="1、前言"></a>1、前言</h1><p>​本文章，主要参考资料为，《Market Guide for Network Traffic Analysis》by Gartner；《Network Traffic Analysis》 by awake；《NTA以及空间与时间的防御——山石网科的安全理解》by 山石网科；2020年1月，与Gartner分析师的现场讨论。如有不对及错误之处请及时提醒，以便本人修正。</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="Manning23"><title>网络安全NTA技术基本分析 · Manning23</title><meta name="description" content="1、前言​本文章，主要参考资料为，《Market Guide for Network Traffic Analysis》by Gartner；《Network Traffic Analysis》 by awake；《NTA以及空间与时间的防御——山石网科的安全理解》by 山石网科；2020年1月，与"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">Manning23</a></h3><div class="description"><p>Technology &amp; Life</p></div></div></div><ul class="social-links"><li><a href="http://weibo.com/2077484845"><i class="fa fa-weibo"></i></a></li></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with Hexo&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">首页</a></li><li><a href="/about">关于</a></li><li><a href="/archives">归档</a></li></div><div class="information"><div class="back_btn"><li><a onclick="window.history.go(-1)" class="fa fa-chevron-left"> </a></li></div><div class="avatar"><img src="/images/avatar.png"></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>网络安全NTA技术基本分析</a></h3></div><div class="post-content"><h1 id="1、前言"><a href="#1、前言" class="headerlink" title="1、前言"></a>1、前言</h1><p>​本文章，主要参考资料为，《Market Guide for Network Traffic Analysis》by Gartner；《Network Traffic Analysis》 by awake；《NTA以及空间与时间的防御——山石网科的安全理解》by 山石网科；2020年1月，与Gartner分析师的现场讨论。如有错误之处请及时提醒，以便本人修正。</p>
 <h1 id="2、NTA是什么？"><a href="#2、NTA是什么？" class="headerlink" title="2、NTA是什么？"></a>2、NTA是什么？</h1><h3 id="Gartner对NTA的定义"><a href="#Gartner对NTA的定义" class="headerlink" title="Gartner对NTA的定义"></a>Gartner对NTA的定义</h3><p>​NTA使用<strong>机器学习</strong>、<strong>高级分析</strong>和<strong>特征分析</strong>来检测企业网络上的可疑行为。NTA不断地分析原始流量，以构建反映<strong>正常网络行为的模型</strong>。当NTA工具检测到异常的流量模式时，它们会发出警报。除了监视跨越企业边界的北/南通信量之外，NTA解决方案还接入东西流量。</p>
 <h3 id="Gartner提出NTA的两个结论"><a href="#Gartner提出NTA的两个结论" class="headerlink" title="Gartner提出NTA的两个结论"></a>Gartner提出NTA的两个结论</h3><ul>
 <li>在技术上，NTA使用行为分析技术，帮助企业检测可疑流量，用以发现更多其他设备不能发现的安全问题。</li>
 <li>在市场上，NTA市场门槛低，且市场很拥挤（原来传统安全厂商很容易就进入）</li>
 </ul>
 <h3 id="山石关于NTA定义的解读"><a href="#山石关于NTA定义的解读" class="headerlink" title="山石关于NTA定义的解读"></a>山石关于NTA定义的解读</h3><p>​NTA是一种功能和能力，而非纯粹的一个产品。NTA融合了传统的基于规则的检测技术，以及机器学习和其他高级分析技术，用以检测企业网络中的可疑行为，尤其是失陷后的痕迹。NTA通过DFI和DPI技术来分析网络流量，通常部署在关键的网络区域对东西向和南北向的流量进行分析，而不会试图对全网进行监测。</p>
-<h1 id="3、市场上有NTA技术的产品"><a href="#3、市场上有NTA技术的产品" class="headerlink" title="3、市场上有NTA技术的产品"></a>3、市场上有NTA技术的产品</h1><h3 id="厂商列表，源自Gartner"><a href="#厂商列表，源自Gartner" class="headerlink" title="厂商列表，源自Gartner"></a>厂商列表，源自Gartner</h3><table>
+<h1 id="3、个人分析"><a href="#3、个人分析" class="headerlink" title="3、个人分析"></a>3、个人分析</h1><h3 id="个人对NTA的定义"><a href="#个人对NTA的定义" class="headerlink" title="个人对NTA的定义"></a>个人对NTA的定义</h3><p>首先，我以自身的理解，先给出我对NTA的定义，大家可以先此有一些基本概念。</p>
+<ol>
+<li>NTA是一种功能和能力。</li>
+<li>NTA功能利用行为基线，进行安全问题分析。</li>
+<li>NTA功能某些方面与网络性能管理类似，具有对当前网络的可视性。</li>
+<li>NTA功能主流的分析方法是<strong>对比</strong>。 </li>
+<li>NTA功能与入侵检测功能逻辑等价，都会在边界类盒子产品中出现。</li>
+<li>NTA功能要做的是定义网络行为，收集网络行为。</li>
+<li>NTA功能要在核心节点进行收集行为，有南北向流量、也有东西向流量。</li>
+<li>NTA功能要能有发现可疑流量的能力。</li>
+<li>NTA功能要能有展示入侵证据的能力。</li>
+<li>NTA功能要能有定义入侵事件的能力。</li>
+<li>产品还要围绕NTA功能提示客户一些修复建议。</li>
+</ol>
+<h3 id="NTA定义解读的角度一"><a href="#NTA定义解读的角度一" class="headerlink" title="NTA定义解读的角度一"></a>NTA定义解读的角度一</h3><p>​NTA与IDS的输入是一致的（网络镜像流量），输出也是一致的（安全威胁事件），二者的区别在于发现威胁的方法不同。因此，我们可以理解为，NTA是补充边界安全产品的一项技术能力，与入侵检测能力在逻辑上是等价，两者都是帮助企业发现威胁的技术能力。此外个人还认为，只要是在接入镜像流量后，使用正常数据构建数据基线，然后以对比的方式进行安全分析，就可以算NTA能力。</p>
+<ul>
+<li>入侵检测发现威胁的方式是利用特征检测判断异常或者入侵行为。</li>
+<li>NTA发现威胁的方式是利用多种技术构建正常行为模型，以数据基线的角度判断异常或者入侵行为。</li>
+</ul>
+<p>​在安全场景上看，即使是APT攻击，攻击者依然会遵循一定的方式进行：前期对IT环境的侦查、对边界的尝试绕过、社会工程学与钓鱼的针对人攻击、内网的扩散、后门的植入等。而NTA的的价值就在于通过对实际流量进行分析、对比，发现威胁。</p>
+<p>​在分析能力上看，基于行为模型分析的分析技术，行为模型的质量主要依赖于模型训练的能力，模型训练的质量主要依赖于安全大数据的量级与质量，这点也是小安全厂商无法建立技术壁垒的因素，也就是说由于这种依赖关系，小厂商的NTA能力大概率是不如大厂商。</p>
+<p>​当然，随着传统边界安全产品在处理性能上的提升，部署也可以覆盖南北，东西向流量。这点不是NTA独有。</p>
+<h3 id="NTA定义解读的角度二"><a href="#NTA定义解读的角度二" class="headerlink" title="NTA定义解读的角度二"></a>NTA定义解读的角度二</h3><p>​在密码学中，旁道攻击又称侧信道攻击、边信道攻击（英语：Side-channel attack）是一种攻击方式，它基于从密码系统的物理实现中获取的信息而非暴力破解法或是算法中的理论性弱点（较之密码分析）。例如：时间信息、功率消耗、电磁泄露或甚是声音可以提供额外的信息来源，这可被利用于对系统的进一步破解。某些侧信道攻击还要求攻击者有关于密码系统内部操作的技术性信息，不过，其他诸如差分电力分析的方法在黑盒攻击中效果明显。许多卓有成效的侧信道攻击基于由保罗·科切开拓的统计学方法。</p>
+<p>​侧信道攻击带给我们的知识，是让我们懂得分析问题维度是多种多样的。随着我们对知识点了解的更深，寻找信息的视野与宽度就会变得更加独特。比如判断一个人是否在跑步，首先我们可以从画面的角度判断，另外还可以从地面的震动，空气的流动，这个人的心率等其他维度进行综合判断。此外，如果还有时间轴的信息，那么有时间标注的图片，外加上位置信息，也可以判断。</p>
+<p>​其实做入侵检测也是如此，分析信息的维度不光有当前信息的内容，还可以有承载信息的信道，也就是Tcp流的概念。NTA的概念从这个角度也可以解释，NTA关注的点是行为。思考类比，比如生活中的运动手环，苹果手表，等一些可穿戴产品都是基于行为数据来作为数据分析的依据。</p>
+<p>​因此以生活中的行为分析为基础，类比网络安全的行为分析。那么得出的结论是，能直接进行信息判断的还应该保持，并发挥其特长；当不能进行直接分析时，我们才会进行行为分析。因此DPI技术和NTA技术是对入侵检测能力的相互补充，而不是替代。</p>
+<h3 id="NTA安全场景分析"><a href="#NTA安全场景分析" class="headerlink" title="NTA安全场景分析"></a>NTA安全场景分析</h3><p>​NTA在流量侧解决的问题，一定是传统设备不能解决的，或者说是传统手段解决不好的问题，也就是通过DPI不能解决的问题。</p>
+<p>​NTA解决的是异常流量行为问题，我总结了一些安全场景，如下所示。</p>
+<ol>
+<li>高频攻击产生的异常流量</li>
+<li>黑客入侵产生的异常流量</li>
+<li>终端病毒产生的异常流量</li>
+<li>高级威胁产生的异常流量</li>
+<li>数据外泄产生的异常流量</li>
+<li>僵尸网络产生的异常流量</li>
+<li>恶意挖矿产生的异常流量</li>
+<li>网络蠕虫产生的异常流量</li>
+</ol>
+<h3 id="NTA关键点分析"><a href="#NTA关键点分析" class="headerlink" title="NTA关键点分析"></a>NTA关键点分析</h3><p>​由于NTA要解决的安全问题，以及解决问题使用的方法。因此，个人认为要想获得强大的NTA能力，以及在NTA侧建立领先优势，需要在三个方面下功夫。 </p>
+<p>​第一，明确安全场景，对安全场景理解的越深入，就越能够了解到解决这类问题的基本需求，还能够帮助我们在研发上获得更好的结构性。从另一个方面讲，明确安全场景也是对“未知攻，焉知防”的最佳实践。</p>
+<p>​第二，明确基础数据。这里的基础数据可以是输入到人工智能模型里的结构化数据，也可以是安全算法需要的数据，我们要了解基础数据能提供的信息以及这些信息背后的含义。其实这点也是对安全场景理解的基础上，再进行深入理解。</p>
+<p>​第三，分析算法选择。这里我不建议非要用机器学习算法，我们知道机器学习算法目前在对结构化数据理想的情况下，会表现出不错的能力。但是对于安全数据，结构化的程度，信息量的提供，这些都会打一个问号。当然，如果有很好的安全能力和算法能力，那这还是可以去尝试的。个人认为使用正常数据模板和安全场景模板这两种方式，会比较立竿见影。从攻击者视角思考，利用工具进行高效的攻击是一个好的选择。而且绝大数的攻击者并没有具备改变安全工具行为模式的能力，因此我们构建安全工具行为模板可以有效的进行对抗。</p>
+<h3 id="软件架构基本分析"><a href="#软件架构基本分析" class="headerlink" title="软件架构基本分析"></a>软件架构基本分析</h3><p>​对于在企业级市场中，中大型企业一般都会对多个关键点的镜像流量数据进行安全检测，因此在这种情况下，使用探针和平台的架构是非常合理的。在探针侧进行独立的数据采集、在平台侧进行数据汇总及管理，后期也能比较方便的和其他产品联动。</p>
+<p>​由于NTA功能的融入，平台侧需要很大的计算能力，因此平台侧选择大数据架构是比较合适的，大数据架构提供的信息存储能力、信息检索能力、信息计算能力，可以有效的提升我们的异常分析能力。</p>
+<h3 id="关于数据基线的引申"><a href="#关于数据基线的引申" class="headerlink" title="关于数据基线的引申"></a>关于数据基线的引申</h3><p>​对于NSFOCUS使用NetFlow构建数据基线是没问题的，但其实也可以扩大一些概念。我们不妨把NSFOCUS使用的叫NetFlow数据基线，于此同时，不难可以联想到其他数据基线，比如http访问数据基线、dns访问数据基线，数据库行为数据基线，邮件行为数据基线，以此类推，我们可以构建更多味的的数据基线，当然怎么进行数据基线的处理则是另一回事。</p>
+<h1 id="4、市场上有NTA技术的产品"><a href="#4、市场上有NTA技术的产品" class="headerlink" title="4、市场上有NTA技术的产品"></a>4、市场上有NTA技术的产品</h1><h3 id="厂商列表，源自Gartner"><a href="#厂商列表，源自Gartner" class="headerlink" title="厂商列表，源自Gartner"></a>厂商列表，源自Gartner</h3><table>
 <thead>
 <tr>
 <th style="text-align:left">厂商</th>
@@ -89,51 +134,6 @@
 <h3 id="绿盟科技产品分析"><a href="#绿盟科技产品分析" class="headerlink" title="绿盟科技产品分析"></a>绿盟科技产品分析</h3><h4 id="产品名称：NSFOCUS-NTA"><a href="#产品名称：NSFOCUS-NTA" class="headerlink" title="产品名称：NSFOCUS NTA"></a>产品名称：NSFOCUS NTA</h4><h4 id="核心技术-1"><a href="#核心技术-1" class="headerlink" title="核心技术"></a>核心技术</h4><p>流量管理、流量学习、DDOS流量检测</p>
 <h4 id="核心技术架构-1"><a href="#核心技术架构-1" class="headerlink" title="核心技术架构"></a>核心技术架构</h4><p><img src="/2020/03/14/网络安全NTA技术基本分析/nsfocus_nta架构.png" width="30%"></p>
 <h4 id="简要分析-1"><a href="#简要分析-1" class="headerlink" title="简要分析"></a>简要分析</h4><p>NSFOCUS的NTA是基于NetFlow的角度进行建设的，与NTA的核心思路不变，构建基线、对比检测。比较遗憾的是，该产品关注的点在DDOS类安全问题上，在其他安全场景（高级威胁、内网渗透）上没有使用NTA的思路。</p>
-<h1 id="4、个人分析"><a href="#4、个人分析" class="headerlink" title="4、个人分析"></a>4、个人分析</h1><h3 id="个人对NTA的定义"><a href="#个人对NTA的定义" class="headerlink" title="个人对NTA的定义"></a>个人对NTA的定义</h3><p>首先，我先给出我对NTA的定义，大家可以先此有一些基本概念。</p>
-<ol>
-<li>NTA是一种功能和能力。</li>
-<li>NTA功能利用行为基线，进行安全问题分析。</li>
-<li>NTA功能某些方面与网络性能管理类似，具有对当前网络的可视性。</li>
-<li>NTA功能主流的分析方法是<strong>对比</strong>。 </li>
-<li>NTA功能与入侵检测功能逻辑等价，都会在边界类盒子产品中出现。</li>
-<li>NTA功能要做的是定义网络行为，收集网络行为。</li>
-<li>NTA功能要在核心节点进行收集行为，有南北向流量、也有东西向流量。</li>
-<li>NTA功能要能有发现可疑流量的能力。</li>
-<li>NTA功能要能有展示入侵证据的能力。</li>
-<li>NTA功能要能有定义入侵事件的能力。</li>
-<li>产品还要围绕NTA功能提示客户一些修复建议。</li>
-</ol>
-<h3 id="NTA定义解读的角度一"><a href="#NTA定义解读的角度一" class="headerlink" title="NTA定义解读的角度一"></a>NTA定义解读的角度一</h3><p>​NTA与IDS的输入是一致的（网络镜像流量），输出也是一致的（安全威胁事件），二者的区别在于发现威胁的方法不同。因此，我们可以理解为，NTA是补充边界安全产品的一项技术能力，与入侵检测能力在逻辑上是等价，两者都是帮助企业发现威胁的技术能力。此外个人还认为，只要是在接入镜像流量后，使用正常数据构建数据基线，然后以对比的方式进行安全分析，就可以算NTA能力。</p>
-<ul>
-<li>入侵检测发现威胁的方式是利用特征检测判断异常或者入侵行为。</li>
-<li>NTA发现威胁的方式是利用多种技术构建正常行为模型，以数据基线的角度判断异常或者入侵行为。</li>
-</ul>
-<p>​在安全场景上看，即使是APT攻击，攻击者依然会遵循一定的方式进行：前期对IT环境的侦查、对边界的尝试绕过、社会工程学与钓鱼的针对人攻击、内网的扩散、后门的植入等。而NTA的的价值就在于通过对实际流量进行分析、对比，发现威胁。</p>
-<p>​在分析能力上看，基于行为模型分析的分析技术，行为模型的质量主要依赖于模型训练的能力，模型训练的质量主要依赖于安全大数据的量级与质量，这点也是小安全厂商无法建立技术壁垒的因素，也就是说由于这种依赖关系，小厂商的NTA能力大概率是不如大厂商。</p>
-<p>​当然，随着传统边界安全产品在处理性能上的提升，部署也可以覆盖南北，东西向流量。这点不是NTA独有。</p>
-<h3 id="NTA定义解读的角度二"><a href="#NTA定义解读的角度二" class="headerlink" title="NTA定义解读的角度二"></a>NTA定义解读的角度二</h3><p>​在密码学中，旁道攻击又称侧信道攻击、边信道攻击（英语：Side-channel attack）是一种攻击方式，它基于从密码系统的物理实现中获取的信息而非暴力破解法或是算法中的理论性弱点（较之密码分析）。例如：时间信息、功率消耗、电磁泄露或甚是声音可以提供额外的信息来源，这可被利用于对系统的进一步破解。某些侧信道攻击还要求攻击者有关于密码系统内部操作的技术性信息，不过，其他诸如差分电力分析的方法在黑盒攻击中效果明显。许多卓有成效的侧信道攻击基于由保罗·科切开拓的统计学方法。</p>
-<p>​侧信道攻击带给我们的知识，是让我们懂得分析问题维度是多种多样的。随着我们对知识点了解的更深，寻找信息的视野与宽度就会变得更加独特。比如判断一个人是否在跑步，首先我们可以从画面的角度判断，另外还可以从地面的震动，空气的流动，这个人的心率等其他维度进行综合判断。此外，如果还有时间轴的信息，那么有时间标注的图片，外加上位置信息，也可以判断。</p>
-<p>​其实做入侵检测也是如此，分析信息的维度不光有当前信息的内容，还可以有承载信息的信道，也就是Tcp流的概念。NTA的概念从这个角度也可以解释，NTA关注的点是行为。思考类比，比如生活中的运动手环，苹果手表，等一些可穿戴产品都是基于行为数据来作为数据分析的依据。</p>
-<p>​因此以生活中的行为分析为基础，类比网络安全的行为分析。那么得出的结论是，能直接进行信息判断的还应该保持，并发挥其特长；当不能进行直接分析时，我们才会进行行为分析。因此DPI技术和NTA技术是对入侵检测能力的相互补充，而不是替代。</p>
-<h3 id="NTA安全场景分析"><a href="#NTA安全场景分析" class="headerlink" title="NTA安全场景分析"></a>NTA安全场景分析</h3><p>​NTA在流量侧解决的问题，一定是传统设备不能解决的，或者说是传统手段解决不好的问题，也就是通过DPI不能解决的问题。</p>
-<p>​NTA解决的是异常流量行为问题，我总结了一些安全场景，如下所示。</p>
-<ol>
-<li>高频攻击产生的异常流量</li>
-<li>黑客入侵产生的异常流量</li>
-<li>终端病毒产生的异常流量</li>
-<li>高级威胁产生的异常流量</li>
-<li>数据外泄产生的异常流量</li>
-<li>僵尸网络产生的异常流量</li>
-<li>恶意挖矿产生的异常流量</li>
-<li>网络蠕虫产生的异常流量</li>
-</ol>
-<h3 id="NTA关键点分析"><a href="#NTA关键点分析" class="headerlink" title="NTA关键点分析"></a>NTA关键点分析</h3><p>​由于NTA要解决的安全问题，以及解决问题使用的方法。因此，个人认为要想获得强大的NTA能力，以及在NTA侧建立领先优势，需要在三个方面下功夫。 </p>
-<p>​第一，明确安全场景，对安全场景理解的越深入，就越能够了解到解决这类问题的基本需求，还能够帮助我们在研发上获得更好的结构性。从另一个方面讲，明确安全场景也是对“未知攻，焉知防”的最佳实践。</p>
-<p>​第二，明确基础数据。这里的基础数据可以是输入到人工智能模型里的结构化数据，也可以是安全算法需要的数据，我们要了解基础数据能提供的信息以及这些信息背后的含义。其实这点也是对安全场景理解的基础上，再进行深入理解。</p>
-<p>​第三，分析算法选择。这里我不建议非要用机器学习算法，我们知道机器学习算法目前在对结构化数据理想的情况下，会表现出不错的能力。但是对于安全数据，结构化的程度，信息量的提供，这些都会打一个问号。当然，如果有很好的安全能力和算法能力，那这还是可以去尝试的。个人认为使用正常数据模板和安全场景模板这两种方式，会比较立竿见影。从攻击者视角思考，利用工具进行高效的攻击是一个好的选择。而且绝大数的攻击者并没有具备改变安全工具行为模式的能力，因此我们构建安全工具行为模板可以有效的进行对抗。</p>
-<h3 id="软件架构基本分析"><a href="#软件架构基本分析" class="headerlink" title="软件架构基本分析"></a>软件架构基本分析</h3><p>​对于在企业级市场中，中大型企业一般都会对多个关键点的镜像流量数据进行安全检测，因此在这种情况下，使用探针和平台的架构是非常合理的。在探针侧进行独立的数据采集、在平台侧进行数据汇总及管理，后期也能比较方便的和其他产品联动。</p>
-<p>​由于NTA功能的融入，平台侧需要很大的计算能力，因此平台侧选择大数据架构是比较合适的，大数据架构提供的信息存储能力、信息检索能力、信息计算能力，可以有效的提升我们的异常分析能力。</p>
-<h3 id="关于数据基线的引申"><a href="#关于数据基线的引申" class="headerlink" title="关于数据基线的引申"></a>关于数据基线的引申</h3><p>​对于NSFOCUS使用NetFlow构建数据基线是没问题的，但其实也可以扩大一些概念。我们不妨把NSFOCUS使用的叫NetFlow数据基线，于此同时，不难可以联想到其他数据基线，比如http访问数据基线、dns访问数据基线，数据库行为数据基线，邮件行为数据基线，以此类推，我们可以构建更多味的的数据基线，当然怎么进行数据基线的处理则是另一回事。</p>
 <h1 id="5、相关信息"><a href="#5、相关信息" class="headerlink" title="5、相关信息"></a>5、相关信息</h1><h3 id="DFI和DPI技术介绍"><a href="#DFI和DPI技术介绍" class="headerlink" title="DFI和DPI技术介绍"></a>DFI和DPI技术介绍</h3><p>​DPI全称为“Deep Packet Inspection”，称为“深度包检测”。DPI技术在分析包头的基础上，增加了对应用层的分析，是一种基于应用层的流量检测和控制技术，当IP数据包、TCP或UDP数据流经过基于DPI技术的带宽管理系统时，该系统通过深入读取IP包载荷的内容来对OSI7层协议中的应用层信息进行重组，从而得到整个应用程序的内容，然后按照系统定义的管理策略对流量进行整形操作。</p>
 <p>​DFI全称为“Deep/Dynamic Flow Inspection“，称为”深度/动态流检测“，与DPI进行应用层的载荷匹配不同，采用的是一种基于流量行为的应用识别技术，即不同的应用类型体现在会话连接或数据流上的状态各有不同。 DFI技术正是基于这一系列流量的行为特征，建立流量特征模型，通过分析会话连接流的包长、连接速率、传输字节量、包与包之间的间隔等信息来与流量模型对比，从而实现鉴别应用类型。</p>
 <h3 id="Gartner，Market-Definition"><a href="#Gartner，Market-Definition" class="headerlink" title="Gartner，Market Definition"></a>Gartner，Market Definition</h3><p>​Network traffic analysis (NTA) uses a combination of machine learning, advanced analytics and rule-based detection to detect suspicious activities on enterprise networks. NTA tools continuously analyze raw traffic and/or flow records (for example, NetFlow) to build models that reflect normal network behavior. When the NTA tools detect abnormal traffic patterns, they raise alerts. In addition to monitoring north/south traffic that crosses the enterprise perimeter, NTA solutions can also monitor east/west communications by analyzing network traffic or flow records that it receives from strategically placed network sensors.</p>
